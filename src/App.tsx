@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
   Award,
   BarChart3,
   Bookmark,
   BrainCircuit,
+  Calculator,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
@@ -15,6 +17,7 @@ import {
   History,
   Layers3,
   Loader2,
+  Network,
   Radar,
   RefreshCcw,
   Search,
@@ -22,7 +25,9 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  TrendingUp,
   Trash2,
+  Zap,
   XCircle,
 } from "lucide-react";
 import { ExamType, CFALevel, FRMPart, PracticeSet, SavedPractice } from "./types";
@@ -30,6 +35,7 @@ import { SAMPLE_TOPICS, STATIC_SAMPLE_PRACTICES } from "./data/samples";
 
 type Source = "api" | "backup" | "static";
 type Panel = "diagnosis" | "history";
+type Gap = { point: string; dimension: string; misses: number; examType: string };
 
 const STORAGE_KEY = "examlogic_saved_practices";
 const DIMENSIONS = [
@@ -55,6 +61,16 @@ function sourceText(source: Source) {
   if (source === "api") return "Live AI";
   if (source === "backup") return "Backup Engine";
   return "Curated Sample";
+}
+
+function dimensionName(key?: string) {
+  return DIMENSIONS.find(([dimensionKey]) => dimensionKey === key)?.[1] || "Core";
+}
+
+function qualityTone(value: number) {
+  if (value >= 80) return "text-emerald-300";
+  if (value >= 60) return "text-amber-300";
+  return "text-red-300";
 }
 
 export default function App() {
@@ -133,8 +149,9 @@ export default function App() {
     }
   };
 
-  const generate = async (overrideConcept?: string) => {
+  const generate = async (overrideConcept?: string, overrideDimension?: string) => {
     const concept = (overrideConcept || conceptInput).trim();
+    const targetDimension = overrideDimension ?? dimension;
     if (!concept) {
       setError("Please enter a CFA or FRM curriculum concept first.");
       return;
@@ -150,7 +167,7 @@ export default function App() {
           level: levelLabel(activeLevel),
           concept,
           count,
-          dimension: dimension || undefined,
+          dimension: targetDimension || undefined,
           mode,
         }),
       });
@@ -164,7 +181,7 @@ export default function App() {
         conceptInput: concept,
         generatedAt: new Date().toLocaleString(),
         questions: data.questions,
-        targetDimension: dimension || undefined,
+        targetDimension: targetDimension || undefined,
       };
       setActiveSet(set);
       setSource(data.source === "local-backup" ? "backup" : "api");
@@ -184,6 +201,14 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const startTargetedDrill = (concept: string, targetDimension?: string) => {
+    setConceptInput(concept);
+    if (targetDimension) setDimension(targetDimension);
+    setMode("Conceptual Drill Questions");
+    setCount(3);
+    generate(concept, targetDimension);
   };
 
   const saveCurrent = (completed = graded) => {
@@ -251,6 +276,54 @@ export default function App() {
     });
   }, [saved]);
 
+  const completedPractices = useMemo(() => saved.filter((practice) => practice.isCompleted), [saved]);
+
+  const intelligence = useMemo(() => {
+    let totalQuestions = 0;
+    let totalCorrect = 0;
+    const gaps = new Map<string, Gap>();
+
+    completedPractices.forEach((practice) => {
+      practice.practiceSet.questions.forEach((question) => {
+        const answeredQuestion = practice.userAnswers?.[question.id] !== undefined;
+        if (!answeredQuestion) return;
+        totalQuestions += 1;
+        const correct = practice.userAnswers?.[question.id] === question.correctOptionIndex;
+        if (correct) {
+          totalCorrect += 1;
+          return;
+        }
+        const point = question.pointsTested || practice.practiceSet.conceptInput;
+        const key = `${question.dimension || "Concept_Mastery"}:${point}`;
+        const existing = gaps.get(key);
+        gaps.set(key, {
+          point,
+          dimension: question.dimension || "Concept_Mastery",
+          misses: (existing?.misses || 0) + 1,
+          examType: practice.practiceSet.examType,
+        });
+      });
+    });
+
+    const accuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    const coverage = Math.min(100, Math.round((totalQuestions / 120) * 100));
+    const readiness = totalQuestions ? Math.min(99, Math.round(accuracy * 0.72 + coverage * 0.28)) : 0;
+    const weakDimension = stats.filter((item) => item.attempted > 0).sort((a, b) => a.accuracy - b.accuracy)[0];
+    const topGaps = Array.from(gaps.values()).sort((a, b) => b.misses - a.misses).slice(0, 5);
+    const readinessLabel = readiness >= 82 ? "Exam Ready" : readiness >= 62 ? "Acceleration" : totalQuestions ? "Repair Mode" : "Baseline";
+
+    return {
+      totalQuestions,
+      totalCorrect,
+      accuracy,
+      coverage,
+      readiness,
+      readinessLabel,
+      weakDimension,
+      topGaps,
+    };
+  }, [completedPractices, stats]);
+
   const visibleHistory = saved.filter((entry) => {
     const query = historySearch.toLowerCase();
     return !query || `${entry.practiceSet.examType} ${entry.practiceSet.subLevel} ${entry.practiceSet.conceptInput}`.toLowerCase().includes(query);
@@ -263,7 +336,7 @@ export default function App() {
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#07110f,#0b1e24_42%,#15180d)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.12] [background-image:linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] [background-size:42px_42px]" />
 
-      <header className="border-b border-white/10 bg-black/30 backdrop-blur-xl">
+      <header className="border-b border-cyan-300/15 bg-black/40 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-xl font-black text-cyan-200 shadow-[0_0_36px_rgba(34,211,238,0.22)]">
@@ -281,11 +354,11 @@ export default function App() {
           </div>
           <div className="grid grid-cols-3 gap-2">
             {[
-              ["Syllabus", "2026", ShieldCheck],
-              ["Engine", sourceText(source), Activity],
-              ["Accuracy", graded ? `${result.percent}%` : "Live", Gauge],
+              ["Readiness", `${intelligence.readiness}%`, Gauge],
+              ["Answered", String(intelligence.totalQuestions), Activity],
+              ["Engine", sourceText(source), ShieldCheck],
             ].map(([label, value, Icon]: any) => (
-              <div key={label} className="rounded-lg border border-white/10 bg-white/[0.05] px-4 py-3">
+              <div key={label} className="rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,.08),rgba(34,211,238,.06))] px-4 py-3">
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
                   <Icon className="h-3.5 w-3.5 text-cyan-300" />
                   {label}
@@ -297,7 +370,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-[1500px] gap-5 px-5 py-5 xl:grid-cols-[410px_minmax(0,1fr)]">
+      <main className="mx-auto grid max-w-[1500px] gap-5 px-5 py-5 xl:grid-cols-[390px_minmax(0,1fr)]">
         <aside className="space-y-5">
           <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
@@ -346,6 +419,23 @@ export default function App() {
               <option value="">Balanced Mix</option>
               {DIMENSIONS.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
             </select>
+            <div className="mt-4 rounded-lg border border-cyan-300/15 bg-cyan-300/[0.06] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase text-cyan-200">Adaptive next action</p>
+                  <p className="mt-1 text-xs font-bold text-slate-300">
+                    {intelligence.weakDimension ? `${intelligence.weakDimension.name} repair set` : "Build baseline profile"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => startTargetedDrill(intelligence.topGaps[0]?.point || conceptInput, intelligence.weakDimension?.key)}
+                  disabled={loading}
+                  className="rounded-md bg-amber-300 px-3 py-2 text-[11px] font-black text-slate-950 disabled:bg-slate-600"
+                >
+                  <Zap className="mr-1 inline h-3.5 w-3.5" /> Drill
+                </button>
+              </div>
+            </div>
             <button onClick={() => generate()} disabled={loading} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-3.5 text-sm font-black text-slate-950 shadow-[0_12px_36px_rgba(34,211,238,0.22)] hover:bg-cyan-200 disabled:bg-slate-600">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Generate Exam Set
@@ -441,6 +531,8 @@ export default function App() {
           </div>
 
           <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-5 lg:p-7">
+            <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="min-w-0">
             {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">{error}</div>}
             {loading ? (
               <div className="grid gap-4">{[1, 2, 3].map((item) => <div key={item} className="h-48 animate-pulse rounded-lg bg-white" />)}</div>
@@ -506,6 +598,105 @@ export default function App() {
                 <div className="max-w-xl p-8"><BrainCircuit className="mx-auto h-12 w-12 text-slate-950" /><h2 className="mt-5 text-2xl font-black">Exam intelligence workspace ready</h2><p className="mt-3 text-sm font-medium text-slate-600">Select a CFA or FRM module, enter a curriculum point, and generate a professional practice set.</p></div>
               </div>
             )}
+              </div>
+
+              <aside className="space-y-4 2xl:sticky 2xl:top-0 2xl:self-start">
+                <section className="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 text-white shadow-xl">
+                  <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(34,211,238,.16),rgba(251,191,36,.08))] p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-cyan-200">Exam Readiness</p>
+                        <h3 className="mt-1 text-xl font-black">{intelligence.readinessLabel}</h3>
+                      </div>
+                      <div className={`text-4xl font-black ${qualityTone(intelligence.readiness)}`}>{intelligence.readiness}%</div>
+                    </div>
+                    <div className="mt-4 h-2 overflow-hidden rounded bg-white/10">
+                      <div className="h-full rounded bg-[linear-gradient(90deg,#22d3ee,#34d399,#fbbf24)]" style={{ width: `${Math.max(6, intelligence.readiness)}%` }} />
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {[
+                        ["Questions", intelligence.totalQuestions],
+                        ["Accuracy", `${intelligence.accuracy}%`],
+                        ["Sets", completedPractices.length],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-md border border-white/10 bg-white/[0.06] px-2 py-2">
+                          <div className="text-[9px] font-black uppercase text-slate-500">{label}</div>
+                          <div className="mt-1 text-sm font-black">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="flex items-center gap-2 text-xs font-black uppercase text-slate-300"><Network className="h-4 w-4 text-cyan-300" /> Skill Radar</h4>
+                      <span className="text-[10px] font-black text-slate-500">{intelligence.coverage}% coverage</span>
+                    </div>
+                    <div className="mt-3 space-y-3">
+                      {stats.map((item) => (
+                        <div key={item.key}>
+                          <div className="mb-1 flex items-center justify-between text-[11px] font-black">
+                            <span className="text-slate-300">{item.name}</span>
+                            <span className={item.attempted ? qualityTone(item.accuracy) : "text-slate-600"}>{item.attempted ? `${item.accuracy}%` : "No data"}</span>
+                          </div>
+                          <div className="h-1.5 overflow-hidden rounded bg-white/10">
+                            <div className="h-full rounded bg-cyan-300" style={{ width: `${item.attempted ? item.accuracy : 4}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 text-sm font-black"><AlertTriangle className="h-4 w-4 text-amber-600" /> Weakness Queue</h3>
+                    <span className="rounded bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">{intelligence.topGaps.length} gaps</span>
+                  </div>
+                  {intelligence.topGaps.length ? (
+                    <div className="space-y-2">
+                      {intelligence.topGaps.map((gap) => (
+                        <div key={`${gap.dimension}-${gap.point}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-black">{gap.point}</p>
+                              <p className="mt-1 text-[10px] font-black uppercase text-slate-500">{dimensionName(gap.dimension)} · {gap.misses} miss{gap.misses > 1 ? "es" : ""}</p>
+                            </div>
+                            <button onClick={() => startTargetedDrill(gap.point, gap.dimension)} className="shrink-0 rounded-md bg-slate-950 px-2.5 py-1.5 text-[10px] font-black text-white">
+                              Drill
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+                      <Calculator className="mx-auto h-6 w-6 text-slate-500" />
+                      <p className="mt-2 text-xs font-bold text-slate-500">Submit a practice set to activate weakness diagnosis.</p>
+                    </div>
+                  )}
+                </section>
+
+                <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-black text-emerald-900">
+                    <TrendingUp className="h-4 w-4" />
+                    Adaptive Path
+                  </div>
+                  <div className="mt-3 space-y-2 text-xs font-bold text-emerald-900">
+                    <div className="flex items-center justify-between rounded-md bg-white px-3 py-2">
+                      <span>Current focus</span>
+                      <span>{intelligence.weakDimension?.name || dimensionName(dimension)}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-md bg-white px-3 py-2">
+                      <span>Next target</span>
+                      <span>{intelligence.topGaps[0]?.point ? "Weak point drill" : "Baseline set"}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => startTargetedDrill(intelligence.topGaps[0]?.point || conceptInput, intelligence.weakDimension?.key || dimension)} disabled={loading} className="mt-3 w-full rounded-lg bg-emerald-700 px-3 py-2.5 text-xs font-black text-white disabled:bg-slate-400">
+                    Generate Precision Practice
+                  </button>
+                </section>
+              </aside>
+            </div>
           </div>
         </section>
       </main>
