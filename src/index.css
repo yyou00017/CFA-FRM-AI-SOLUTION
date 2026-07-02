@@ -1,1 +1,135 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  background: #03070b;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background:
+    linear-gradient(135deg, #03070b 0%, #06131f 38%, #071713 68%, #120f05 100%),
+    #03070b;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.62) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 211, 153, 0.56) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(34, 211, 238, 0.18), transparent 22%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 6px);
+  mix-blend-mode: screen;
+}
+
+.bg-white,
+.bg-slate-50,
+.bg-\[\#f5f7f2\] {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.97)) !important;
+  color: #e2e8f0 !important;
+}
+
+.bg-cyan-50 {
+  background: rgba(34, 211, 238, 0.08) !important;
+}
+
+.bg-emerald-50 {
+  background: rgba(52, 211, 153, 0.08) !important;
+}
+
+.bg-amber-50 {
+  background: rgba(251, 191, 36, 0.08) !important;
+}
+
+.bg-red-50 {
+  background: rgba(248, 113, 113, 0.1) !important;
+}
+
+.text-slate-950,
+.text-slate-900,
+.text-slate-800,
+.text-slate-700,
+.text-slate-600 {
+  color: #e2e8f0 !important;
+}
+
+.text-cyan-800,
+.text-cyan-700 {
+  color: #67e8f9 !important;
+}
+
+.text-emerald-900,
+.text-emerald-800,
+.text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+.text-amber-800,
+.text-amber-700 {
+  color: #fcd34d !important;
+}
+
+.text-red-800,
+.text-red-700 {
+  color: #fca5a5 !important;
+}
+
+.border-slate-200,
+.border-slate-300,
+.border-cyan-100,
+.border-emerald-200,
+.border-amber-200,
+.border-red-200 {
+  border-color: rgba(34, 211, 238, 0.18) !important;
+}
+
+.shadow-sm,
+.shadow-xl,
+.shadow-2xl {
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.38),
+    0 0 32px rgba(34, 211, 238, 0.08) !important;
+}
+
+button,
+select,
+textarea,
+input {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button:hover:not(:disabled) {
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.18);
+}
+
+textarea,
+input,
+select {
+  color: #e2e8f0 !important;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.32);
+  color: #ffffff;
+}
