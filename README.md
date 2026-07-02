@@ -1,20 +1,37 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# ExamLogic AI
 
-# Run and deploy your AI Studio app
+ExamLogic AI is a CFA and FRM practice-question generator built with Vite, React, TypeScript, Tailwind CSS, and a Vercel Serverless API.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/39539de2-235d-40f0-805d-2757aa2a02e5
+- Generate original CFA and FRM practice questions from a user-entered concept.
+- Support CFA Level I/II/III and FRM Part I/II.
+- Return detailed solutions, knowledge analysis, and exam-logic insights.
+- Save local practice history in the browser.
+- Diagnose performance across six cognitive dimensions.
+- Use a local backup generator when Gemini is unavailable, so testing does not fail silently.
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
+## Local Development
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+
+   ```bash
+   npm install
+   ```
+
+2. Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY`.
+
+3. Start the local app:
+
+   ```bash
+   npm run dev
+   ```
+
+## Vercel Deployment
+
+Add these environment variables in Vercel Project Settings:
+
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (optional, defaults to `gemini-2.5-flash`)
+
+The frontend calls `/api/generate-questions`, which is implemented by `api/generate-questions.ts`.
