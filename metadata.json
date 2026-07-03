@@ -1,6 +1,6 @@
 {
-  "name": "CFA and FRM Practice Question Generator",
-  "description": "An interactive practice exam generator designed for CFA and FRM candidates to practice highly targeted questions derived from actual exam logics using customized concept inputs.",
+  "name": "HarborQuant",
+  "description": "An adaptive finance exam intelligence workspace for CFA and FRM candidates, generating targeted practice questions from customized concept inputs.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
