@@ -214,6 +214,8 @@ function applyQualityControl(questions: any[], examType: string, count: number, 
 }
 
 const MAX_MEMORY_FINGERPRINTS = 80;
+const AI_TIMEOUT_MS = Number(process.env.AI_GENERATION_TIMEOUT_MS || 9000);
+const MIN_FAST_ACCEPT_SCORE = 72;
 const recentFingerprints = new Map<string, string[]>();
 
 function memoryKey(examType: string, level: string, concept: string, selectedDimension?: string) {
@@ -227,6 +229,22 @@ function getQualityHistory(key: string, providedHistory: string[]) {
 function rememberFingerprints(key: string, fingerprints: string[]) {
   const current = recentFingerprints.get(key) || [];
   recentFingerprints.set(key, Array.from(new Set([...fingerprints, ...current])).slice(0, MAX_MEMORY_FINGERPRINTS));
+}
+
+function shouldRetryForQuality(controlled: { questions: GeneratedQuestion[]; quality: QualityReport }, count: number) {
+  if (!controlled.questions.length) return true;
+  if (controlled.questions.length < count) return true;
+  if (controlled.quality.duplicateRisk === "high") return true;
+  return controlled.quality.score < MIN_FAST_ACCEPT_SCORE;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`AI generation timed out after ${timeoutMs}ms`)), timeoutMs);
+    }),
+  ]);
 }
 
 function shuffleOptions(options: string[], correctOptionIndex: number) {
@@ -409,7 +427,7 @@ export default async function handler(req: any, res: any) {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const optionCount = examType === "FRM" ? 4 : 3;
-    const candidateCount = Math.min(8, count + 3);
+    const candidateCount = Math.min(6, count + 2);
     const dimensionDirective = dimension
       ? `Every question must use this exact cognitive dimension: ${dimension}.`
       : "Distribute questions across different cognitive dimensions where possible.";
@@ -417,25 +435,28 @@ export default async function handler(req: any, res: any) {
     let bestControlled: { questions: GeneratedQuestion[]; quality: QualityReport } | null = null;
 
     for (let attempt = 1; attempt <= 2; attempt += 1) {
-      const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-        contents: `Generate exactly ${candidateCount} original ${examType} ${level} practice question candidate(s) about: ${concept.trim()}.
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+          contents: `Generate exactly ${candidateCount} original ${examType} ${level} practice question candidate(s) about: ${concept.trim()}.
 Each question must have exactly ${optionCount} options.
 ${dimensionDirective}
 
 Quality requirements:
 - Use different facts, numbers, assumptions, and testing angles across candidates.
 - Avoid semantic overlap with these recent fingerprints:
-${history.length ? history.slice(0, 16).map((item, index) => `${index + 1}. ${item.slice(0, 240)}`).join("\n") : "No recent fingerprints provided."}
+${history.length ? history.slice(0, 10).map((item, index) => `${index + 1}. ${item.slice(0, 180)}`).join("\n") : "No recent fingerprints provided."}
 - Prefer exam-like stems with enough data to solve, one clearly best answer, and explanations that address why distractors are wrong.
 - Return only JSON that matches the schema.`,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          temperature: attempt === 1 ? 0.25 : 0.38,
-          responseMimeType: "application/json",
-          responseSchema: getResponseSchema(),
-        },
-      });
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+            temperature: attempt === 1 ? 0.25 : 0.38,
+            responseMimeType: "application/json",
+            responseSchema: getResponseSchema(),
+          },
+        }),
+        AI_TIMEOUT_MS
+      );
 
       const parsed = JSON.parse(response.text || "{}");
       const controlled = applyQualityControl(
@@ -453,6 +474,14 @@ ${history.length ? history.slice(0, 16).map((item, index) => `${index + 1}. ${it
 
       if (controlled.questions.length === count && controlled.quality.passed) {
         return sendControlled(controlled, "gemini-api");
+      }
+
+      if (!shouldRetryForQuality(controlled, count)) {
+        return sendControlled(
+          controlled,
+          "gemini-api",
+          "Returned without a second AI retry to keep response time fast; quality guard accepted the strongest candidates."
+        );
       }
     }
 
