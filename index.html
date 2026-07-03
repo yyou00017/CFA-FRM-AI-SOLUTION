@@ -5,12 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ExamLogic AI generates original CFA and FRM practice questions with explanations, grading history, and cognitive-dimension diagnostics."
+      content="HarborQuant generates original CFA and FRM practice questions with explanations, grading history, and cognitive-dimension diagnostics."
     />
-    <title>ExamLogic AI - CFA & FRM Practice Generator</title>
+    <title>HarborQuant - CFA & FRM Practice Generator</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.__HARBORQUANT_BRAND_SYNC__ = function () {
+        var replacements = [
+          ["ExamLogic AI Command Center", "HarborQuant Command Center"],
+          ["ExamLogic AI", "HarborQuant"],
+          ["AI Exam OS", "AI Finance OS"]
+        ];
+        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        var node;
+        while ((node = walker.nextNode())) {
+          var text = node.nodeValue || "";
+          replacements.forEach(function (pair) {
+            text = text.split(pair[0]).join(pair[1]);
+          });
+          node.nodeValue = text;
+        }
+      };
+      new MutationObserver(window.__HARBORQUANT_BRAND_SYNC__).observe(document.getElementById("root"), { childList: true, subtree: true });
+      window.__HARBORQUANT_BRAND_SYNC__();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
