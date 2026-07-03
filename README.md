@@ -1,6 +1,6 @@
-# ExamLogic AI
+# HarborQuant
 
-ExamLogic AI is a CFA and FRM practice-question generator built with Vite, React, TypeScript, Tailwind CSS, and a Vercel Serverless API.
+HarborQuant is a CFA and FRM practice-question generator built with Vite, React, TypeScript, Tailwind CSS, and a Vercel Serverless API.
 
 ## Features
 
