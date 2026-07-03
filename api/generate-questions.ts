@@ -24,6 +24,29 @@ Rules:
 - Explanations must include formulas, assumptions, and why distractors are wrong when relevant.
 `;
 
+type GeneratedQuestion = {
+  id: string;
+  text: string;
+  options: string[];
+  correctOptionIndex: number;
+  stepByStepSolution: string;
+  knowledgeAnalysis: string;
+  examLogicInsight: string;
+  pointsTested: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  dimension?: string;
+};
+
+type QualityReport = {
+  score: number;
+  passed: boolean;
+  duplicateRisk: "low" | "medium" | "high";
+  issues: string[];
+  fingerprints: string[];
+  attempts: number;
+  guardrails: string[];
+};
+
 function clampQuestionCount(value: unknown) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 3;
@@ -33,6 +56,177 @@ function clampQuestionCount(value: unknown) {
 function normalizeDimension(value: unknown) {
   if (typeof value !== "string") return undefined;
   return VALID_DIMENSIONS.includes(value as any) ? value : undefined;
+}
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9.%$ ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokens(value: string) {
+  return new Set(normalizeText(value).split(" ").filter((token) => token.length > 3));
+}
+
+function jaccard(a: Set<string>, b: Set<string>) {
+  if (!a.size || !b.size) return 0;
+  let overlap = 0;
+  a.forEach((token) => {
+    if (b.has(token)) overlap += 1;
+  });
+  return overlap / (a.size + b.size - overlap);
+}
+
+function compactFingerprint(question: GeneratedQuestion) {
+  const numbers = question.text.match(/(?:\$?\d+(?:\.\d+)?%?)/g)?.slice(0, 6).join("|") || "no-numbers";
+  return normalizeText(`${question.dimension || "Core"} ${question.pointsTested} ${question.difficulty} ${numbers}`).slice(0, 220);
+}
+
+function parseHistory(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") {
+        const record = item as any;
+        return [record.text, record.pointsTested, record.fingerprint, record.conceptInput].filter(Boolean).join(" ");
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .slice(0, 40);
+}
+
+function optionCountFor(examType: string) {
+  return examType === "FRM" ? 4 : 3;
+}
+
+function validateQuestion(question: any, examType: string, selectedDimension?: string): GeneratedQuestion | null {
+  const optionCount = optionCountFor(examType);
+  if (!question || typeof question !== "object") return null;
+  if (typeof question.text !== "string" || question.text.trim().length < 80) return null;
+  if (!Array.isArray(question.options) || question.options.length !== optionCount) return null;
+  if (!Number.isInteger(question.correctOptionIndex) || question.correctOptionIndex < 0 || question.correctOptionIndex >= optionCount) return null;
+  if (typeof question.stepByStepSolution !== "string" || question.stepByStepSolution.trim().length < 80) return null;
+  if (typeof question.knowledgeAnalysis !== "string" || question.knowledgeAnalysis.trim().length < 40) return null;
+  if (typeof question.examLogicInsight !== "string" || question.examLogicInsight.trim().length < 40) return null;
+  if (typeof question.pointsTested !== "string" || !question.pointsTested.trim()) return null;
+  if (!["Easy", "Medium", "Hard"].includes(question.difficulty)) return null;
+  const dimension = normalizeDimension(question.dimension) || selectedDimension || "Concept_Mastery";
+  if (selectedDimension && dimension !== selectedDimension) return null;
+
+  const uniqueOptions = new Set(question.options.map((option: unknown) => normalizeText(String(option || ""))));
+  if (uniqueOptions.size !== optionCount) return null;
+
+  return {
+    id: typeof question.id === "string" && question.id ? question.id : `q_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    text: question.text.trim(),
+    options: question.options.map((option: string) => option.trim()),
+    correctOptionIndex: question.correctOptionIndex,
+    stepByStepSolution: question.stepByStepSolution.trim(),
+    knowledgeAnalysis: question.knowledgeAnalysis.trim(),
+    examLogicInsight: question.examLogicInsight.trim(),
+    pointsTested: question.pointsTested.trim(),
+    difficulty: question.difficulty,
+    dimension,
+  };
+}
+
+function scoreQuestionQuality(question: GeneratedQuestion, peers: GeneratedQuestion[], history: string[], examType: string) {
+  const issues: string[] = [];
+  let score = 100;
+  const textTokens = tokens(`${question.text} ${question.pointsTested}`);
+  const historySimilarity = Math.max(0, ...history.map((item) => jaccard(textTokens, tokens(item))));
+  const peerSimilarity = Math.max(0, ...peers.filter((peer) => peer.id !== question.id).map((peer) => jaccard(textTokens, tokens(`${peer.text} ${peer.pointsTested}`))));
+  const duplicateScore = Math.max(historySimilarity, peerSimilarity);
+
+  if (duplicateScore > 0.72) {
+    issues.push("High semantic overlap with existing or peer question.");
+    score -= 35;
+  } else if (duplicateScore > 0.52) {
+    issues.push("Medium similarity; accepted only if other quality signals are strong.");
+    score -= 16;
+  }
+
+  if (question.text.length < 120) {
+    issues.push("Question stem is too short for professional exam style.");
+    score -= 12;
+  }
+  if (question.stepByStepSolution.length < 160) {
+    issues.push("Solution lacks detailed step-by-step reasoning.");
+    score -= 14;
+  }
+  if (!/[0-9]/.test(question.text) && question.dimension === "Calculation") {
+    issues.push("Calculation question lacks numerical inputs.");
+    score -= 18;
+  }
+  if (!/(because|therefore|distractor|incorrect|trap|assumption|formula|step)/i.test(question.stepByStepSolution + " " + question.examLogicInsight)) {
+    issues.push("Explanation does not clearly address reasoning or distractors.");
+    score -= 10;
+  }
+  if (question.options.length !== optionCountFor(examType)) {
+    issues.push("Incorrect number of answer options.");
+    score -= 30;
+  }
+
+  const duplicateRisk = duplicateScore > 0.72 ? "high" : duplicateScore > 0.52 ? "medium" : "low";
+  return { score: Math.max(0, Math.min(100, score)), duplicateRisk, issues };
+}
+
+function applyQualityControl(questions: any[], examType: string, count: number, selectedDimension: string | undefined, history: string[], attempts: number): { questions: GeneratedQuestion[]; quality: QualityReport } {
+  const validated = questions
+    .map((question) => validateQuestion(question, examType, selectedDimension))
+    .filter(Boolean) as GeneratedQuestion[];
+
+  const reports = validated.map((question) => scoreQuestionQuality(question, validated, history, examType));
+  const accepted = validated
+    .map((question, index) => ({ question, report: reports[index] }))
+    .filter(({ report }) => report.score >= 78 && report.duplicateRisk !== "high")
+    .sort((a, b) => b.report.score - a.report.score)
+    .slice(0, count);
+
+  const selected = accepted.length >= count ? accepted : validated.map((question, index) => ({ question, report: reports[index] })).sort((a, b) => b.report.score - a.report.score).slice(0, count);
+  const avgScore = selected.length ? Math.round(selected.reduce((sum, item) => sum + item.report.score, 0) / selected.length) : 0;
+  const issues = Array.from(new Set(selected.flatMap((item) => item.report.issues))).slice(0, 8);
+  const duplicateRisk = selected.some((item) => item.report.duplicateRisk === "high") ? "high" : selected.some((item) => item.report.duplicateRisk === "medium") ? "medium" : "low";
+
+  return {
+    questions: selected.map((item) => item.question),
+    quality: {
+      score: avgScore,
+      passed: selected.length === count && avgScore >= 78 && duplicateRisk !== "high",
+      duplicateRisk,
+      issues,
+      fingerprints: selected.map((item) => compactFingerprint(item.question)),
+      attempts,
+      guardrails: [
+        "Schema validation",
+        "Single-answer validation",
+        "Option-count validation",
+        "Duplicate fingerprint check",
+        "Explanation-depth check",
+        "Dimension consistency check",
+      ],
+    },
+  };
+}
+
+const MAX_MEMORY_FINGERPRINTS = 80;
+const recentFingerprints = new Map<string, string[]>();
+
+function memoryKey(examType: string, level: string, concept: string, selectedDimension?: string) {
+  return normalizeText(`${examType} ${level} ${concept} ${selectedDimension || "mixed"}`).slice(0, 180);
+}
+
+function getQualityHistory(key: string, providedHistory: string[]) {
+  return [...providedHistory, ...(recentFingerprints.get(key) || [])].slice(0, MAX_MEMORY_FINGERPRINTS);
+}
+
+function rememberFingerprints(key: string, fingerprints: string[]) {
+  const current = recentFingerprints.get(key) || [];
+  recentFingerprints.set(key, Array.from(new Set([...fingerprints, ...current])).slice(0, MAX_MEMORY_FINGERPRINTS));
 }
 
 function shuffleOptions(options: string[], correctOptionIndex: number) {
@@ -178,12 +372,36 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Please provide examType, level, and a non-empty concept." });
   }
 
-  const fallback = () =>
-    res.status(200).json({
-      questions: buildFallbackQuestions(examType, level, concept.trim(), count, dimension),
-      source: "local-backup",
-      notice: "Generated by the built-in backup engine because the Gemini request was unavailable.",
+  const historyKey = memoryKey(examType, level, concept.trim(), dimension);
+  const providedHistory = parseHistory(req.body?.history || req.body?.recentQuestions || req.body?.seenQuestions);
+  const history = getQualityHistory(historyKey, providedHistory);
+
+  const sendControlled = (controlled: { questions: GeneratedQuestion[]; quality: QualityReport }, source: string, notice?: string) => {
+    rememberFingerprints(historyKey, controlled.quality.fingerprints);
+    return res.status(200).json({
+      questions: controlled.questions,
+      quality: controlled.quality,
+      source,
+      ...(notice ? { notice } : {}),
     });
+  };
+
+  const fallback = (attempts = 1) => {
+    const controlled = applyQualityControl(
+      buildFallbackQuestions(examType, level, concept.trim(), count, dimension),
+      examType,
+      count,
+      dimension,
+      history,
+      attempts
+    );
+
+    return sendControlled(
+      controlled,
+      "local-backup",
+      "Generated by the built-in backup engine because the AI request was unavailable or did not pass quality checks."
+    );
+  };
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return fallback();
@@ -191,27 +409,62 @@ export default async function handler(req: any, res: any) {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const optionCount = examType === "FRM" ? 4 : 3;
+    const candidateCount = Math.min(8, count + 3);
     const dimensionDirective = dimension
       ? `Every question must use this exact cognitive dimension: ${dimension}.`
       : "Distribute questions across different cognitive dimensions where possible.";
 
-    const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-      contents: `Generate exactly ${count} original ${examType} ${level} practice question(s) about: ${concept.trim()}.
+    let bestControlled: { questions: GeneratedQuestion[]; quality: QualityReport } | null = null;
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const response = await ai.models.generateContent({
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+        contents: `Generate exactly ${candidateCount} original ${examType} ${level} practice question candidate(s) about: ${concept.trim()}.
 Each question must have exactly ${optionCount} options.
-${dimensionDirective}`,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.25,
-        responseMimeType: "application/json",
-        responseSchema: getResponseSchema(),
-      },
-    });
+${dimensionDirective}
 
-    const parsed = JSON.parse(response.text || "{}");
-    if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) return fallback();
+Quality requirements:
+- Use different facts, numbers, assumptions, and testing angles across candidates.
+- Avoid semantic overlap with these recent fingerprints:
+${history.length ? history.slice(0, 16).map((item, index) => `${index + 1}. ${item.slice(0, 240)}`).join("\n") : "No recent fingerprints provided."}
+- Prefer exam-like stems with enough data to solve, one clearly best answer, and explanations that address why distractors are wrong.
+- Return only JSON that matches the schema.`,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          temperature: attempt === 1 ? 0.25 : 0.38,
+          responseMimeType: "application/json",
+          responseSchema: getResponseSchema(),
+        },
+      });
 
-    return res.status(200).json({ questions: parsed.questions.slice(0, count), source: "gemini-api" });
+      const parsed = JSON.parse(response.text || "{}");
+      const controlled = applyQualityControl(
+        Array.isArray(parsed.questions) ? parsed.questions : [],
+        examType,
+        count,
+        dimension,
+        history,
+        attempt
+      );
+
+      if (!bestControlled || controlled.quality.score > bestControlled.quality.score) {
+        bestControlled = controlled;
+      }
+
+      if (controlled.questions.length === count && controlled.quality.passed) {
+        return sendControlled(controlled, "gemini-api");
+      }
+    }
+
+    if (bestControlled?.questions.length) {
+      return sendControlled(
+        bestControlled,
+        "gemini-api",
+        bestControlled.quality.passed ? undefined : "The quality guard accepted the strongest available candidates after retry."
+      );
+    }
+
+    return fallback(2);
   } catch (error: any) {
     console.info("Gemini generation failed; serving fallback questions.", error?.message || error);
     return fallback();
