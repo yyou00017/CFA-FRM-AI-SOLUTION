@@ -133,3 +133,170 @@ select {
   background: rgba(34, 211, 238, 0.32);
   color: #ffffff;
 }
+
+.app-shell {
+  --hq-page: #03070b;
+  --hq-panel: rgba(15, 23, 42, 0.92);
+  --hq-panel-strong: rgba(2, 6, 23, 0.96);
+  --hq-card: rgba(255, 255, 255, 0.06);
+  --hq-card-soft: rgba(255, 255, 255, 0.08);
+  --hq-text: #f8fafc;
+  --hq-muted: #94a3b8;
+  --hq-border: rgba(34, 211, 238, 0.18);
+  --hq-accent: #22d3ee;
+  --hq-accent-2: #34d399;
+  --hq-grid: rgba(34, 211, 238, 0.18);
+  background: var(--hq-page);
+}
+
+.app-shell[data-theme="mist"] {
+  --hq-page: #eef7f3;
+  --hq-panel: rgba(248, 253, 250, 0.94);
+  --hq-panel-strong: rgba(235, 247, 243, 0.98);
+  --hq-card: rgba(255, 255, 255, 0.78);
+  --hq-card-soft: rgba(226, 244, 239, 0.72);
+  --hq-text: #102523;
+  --hq-muted: #5f7470;
+  --hq-border: rgba(47, 143, 157, 0.24);
+  --hq-accent: #0f8ea5;
+  --hq-accent-2: #20a77a;
+  --hq-grid: rgba(47, 143, 157, 0.12);
+}
+
+.app-shell[data-theme="terminal"] {
+  --hq-page: #101820;
+  --hq-panel: rgba(20, 32, 38, 0.94);
+  --hq-panel-strong: rgba(13, 24, 30, 0.98);
+  --hq-card: rgba(216, 243, 220, 0.08);
+  --hq-card-soft: rgba(31, 138, 112, 0.12);
+  --hq-text: #e7f5ef;
+  --hq-muted: #9fb7ad;
+  --hq-border: rgba(86, 211, 184, 0.22);
+  --hq-accent: #56d3b8;
+  --hq-accent-2: #b7e4c7;
+  --hq-grid: rgba(86, 211, 184, 0.12);
+}
+
+.app-shell[data-theme="paper"] {
+  --hq-page: #f7fafc;
+  --hq-panel: rgba(255, 255, 255, 0.95);
+  --hq-panel-strong: rgba(241, 247, 253, 0.98);
+  --hq-card: rgba(255, 255, 255, 0.86);
+  --hq-card-soft: rgba(226, 239, 252, 0.74);
+  --hq-text: #172033;
+  --hq-muted: #64748b;
+  --hq-border: rgba(14, 116, 144, 0.22);
+  --hq-accent: #0891b2;
+  --hq-accent-2: #2563eb;
+  --hq-grid: rgba(14, 116, 144, 0.10);
+}
+
+.app-shell[data-theme="amber"] {
+  --hq-page: #17130c;
+  --hq-panel: rgba(38, 31, 20, 0.94);
+  --hq-panel-strong: rgba(26, 21, 14, 0.98);
+  --hq-card: rgba(246, 215, 139, 0.10);
+  --hq-card-soft: rgba(34, 197, 94, 0.10);
+  --hq-text: #fff7e6;
+  --hq-muted: #d0b98b;
+  --hq-border: rgba(246, 215, 139, 0.22);
+  --hq-accent: #f6d78b;
+  --hq-accent-2: #22c55e;
+  --hq-grid: rgba(246, 215, 139, 0.10);
+}
+
+.app-shell[data-theme] > .fixed {
+  background:
+    linear-gradient(135deg, var(--hq-page), var(--hq-panel-strong) 58%, var(--hq-card-soft)) !important;
+}
+
+.app-shell[data-theme] > .fixed:nth-of-type(2) {
+  opacity: 0.42 !important;
+  background-image:
+    linear-gradient(var(--hq-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hq-grid) 1px, transparent 1px) !important;
+}
+
+.app-shell[data-theme] > .fixed:nth-of-type(3) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hq-accent) 24%, transparent), transparent) !important;
+}
+
+.app-shell[data-theme] header,
+.app-shell[data-theme] main > section,
+.app-shell[data-theme] main > aside > section,
+.app-shell[data-theme] article,
+.app-shell[data-theme] aside section,
+.app-shell[data-theme] .sticky {
+  border-color: var(--hq-border) !important;
+  background: linear-gradient(180deg, var(--hq-panel), var(--hq-panel-strong)) !important;
+  color: var(--hq-text) !important;
+}
+
+.app-shell[data-theme] .bg-white\/\[0\.06\],
+.app-shell[data-theme] .bg-white\/\[0\.05\],
+.app-shell[data-theme] .bg-white\/\[0\.04\],
+.app-shell[data-theme] .bg-white\/\[0\.08\],
+.app-shell[data-theme] .bg-black\/20,
+.app-shell[data-theme] .bg-black\/30,
+.app-shell[data-theme] .bg-slate-950,
+.app-shell[data-theme] .bg-slate-950\/80,
+.app-shell[data-theme] .bg-slate-950\/90,
+.app-shell[data-theme] .bg-\[\#061018\],
+.app-shell[data-theme] .bg-\[\#0b1718\] {
+  background: var(--hq-card) !important;
+  color: var(--hq-text) !important;
+}
+
+.app-shell[data-theme] .text-white,
+.app-shell[data-theme] .text-slate-50,
+.app-shell[data-theme] .text-slate-100,
+.app-shell[data-theme] .text-slate-200,
+.app-shell[data-theme] .text-slate-300 {
+  color: var(--hq-text) !important;
+}
+
+.app-shell[data-theme] .text-slate-400,
+.app-shell[data-theme] .text-slate-500,
+.app-shell[data-theme] .text-slate-600 {
+  color: var(--hq-muted) !important;
+}
+
+.app-shell[data-theme] .border-white\/10,
+.app-shell[data-theme] .border-cyan-300\/15,
+.app-shell[data-theme] .border-cyan-300\/20,
+.app-shell[data-theme] .border-slate-900 {
+  border-color: var(--hq-border) !important;
+}
+
+.app-shell[data-theme] textarea,
+.app-shell[data-theme] input,
+.app-shell[data-theme] select {
+  background: var(--hq-card) !important;
+  border-color: var(--hq-border) !important;
+  color: var(--hq-text) !important;
+}
+
+.app-shell[data-theme] .bg-cyan-300,
+.app-shell[data-theme] .bg-emerald-300,
+.app-shell[data-theme] .bg-amber-300 {
+  color: #061018 !important;
+}
+
+.app-shell[data-theme="mist"],
+.app-shell[data-theme="paper"] {
+  color-scheme: light;
+}
+
+.app-shell[data-theme="mist"] .text-slate-950,
+.app-shell[data-theme="paper"] .text-slate-950,
+.app-shell[data-theme="mist"] .bg-cyan-300,
+.app-shell[data-theme="paper"] .bg-cyan-300,
+.app-shell[data-theme="mist"] .bg-emerald-300,
+.app-shell[data-theme="paper"] .bg-emerald-300 {
+  color: #062329 !important;
+}
+
+.app-shell[data-theme="mist"] article,
+.app-shell[data-theme="paper"] article {
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08) !important;
+}
