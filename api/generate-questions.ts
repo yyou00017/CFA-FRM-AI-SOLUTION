@@ -269,11 +269,20 @@ function buildFallbackQuestions(
 ) {
   const optionCount = examType === "FRM" ? 4 : 3;
   const dimensions = selectedDimension ? [selectedDimension] : [...VALID_DIMENSIONS];
+  const cleanConcept = concept.trim();
 
   return Array.from({ length: count }, (_, index) => {
     const dimension = dimensions[index % dimensions.length];
     const baseId = `fallback_${Date.now()}_${index}`;
-    const company = ["Northstar Capital", "Apex Risk Group", "Meridian Advisory", "Summit Pension Trust"][index % 4];
+    const institution = ["Northstar Capital", "Apex Risk Group", "Meridian Advisory", "Summit Pension Trust", "Bluewater Bank"][index % 5];
+    const roles = ["portfolio manager", "risk analyst", "investment committee", "compliance lead", "research director"];
+    const settings = [
+      "during a quarterly review",
+      "while preparing a client memo",
+      "after a market volatility shock",
+      "before an internal model validation meeting",
+      "while reviewing a candidate's mock exam response",
+    ];
 
     let text = "";
     let options: string[] = [];
@@ -285,39 +294,88 @@ function buildFallbackQuestions(
     let difficulty: "Easy" | "Medium" | "Hard" = "Medium";
 
     if (dimension === "Calculation") {
-      const rf = 3.5 + index * 0.3;
-      const beta = 0.9 + index * 0.1;
-      const premium = 5.2 + index * 0.4;
-      const answer = rf + beta * premium;
-      text = `${company} is estimating a required return under ${concept} for ${examType} ${level}. The risk-free rate is ${rf.toFixed(1)}%, beta is ${beta.toFixed(2)}, and the expected market risk premium is ${premium.toFixed(1)}%. The required return is closest to:`;
-      options = [`${answer.toFixed(2)}%`, `${(beta * premium).toFixed(2)}%`, `${((rf + premium) * beta).toFixed(2)}%`, `${(rf + premium).toFixed(2)}%`].slice(0, optionCount);
-      stepByStepSolution = `Use the CAPM form E(R) = Rf + beta x market risk premium. Substitute the inputs: ${rf.toFixed(1)}% + ${beta.toFixed(2)} x ${premium.toFixed(1)}% = ${answer.toFixed(2)}%. The distractors either omit the risk-free rate or multiply beta by the full market return.`;
-      knowledgeAnalysis = "This tests whether the candidate distinguishes expected market return from market risk premium and applies the correct required-return structure.";
-      examLogicInsight = "A common exam trap is to multiply beta by the total market return rather than only by the market risk premium.";
-      pointsTested = "Required return calculation";
-    } else if (dimension === "Risk_Management") {
-      const exposure = 120 + index * 25;
-      const weight = index % 2 === 0 ? 100 : 150;
-      const rwa = exposure * (weight / 100);
-      const capital = rwa * 0.045;
-      text = `${company} is reviewing a Basel-style capital requirement connected with ${concept}. An exposure of $${exposure} million has a ${weight}% risk weight. The minimum CET1 capital before buffers is closest to:`;
-      options = [`$${capital.toFixed(2)} million`, `$${(rwa * 0.06).toFixed(2)} million`, `$${(rwa * 0.08).toFixed(2)} million`, `$${(exposure * 0.045).toFixed(2)} million`].slice(0, optionCount);
-      stepByStepSolution = `First calculate RWA: $${exposure} million x ${weight}% = $${rwa.toFixed(2)} million. Minimum CET1 before buffers is 4.5%, so required CET1 is $${rwa.toFixed(2)} million x 4.5% = $${capital.toFixed(2)} million.`;
-      knowledgeAnalysis = "The key is separating exposure size from risk-weighted assets before applying regulatory capital ratios.";
-      examLogicInsight = "Distractors usually apply the wrong capital ratio or skip the risk-weighting step.";
-      pointsTested = "Risk-weighted assets and CET1 capital";
-    } else {
-      text = `${company} is evaluating ${concept} for ${examType} ${level}. Which statement best reflects the exam-relevant interpretation of this concept?`;
+      const sample = 42 + index * 8;
+      const exceptions = 3 + index;
+      const exceptionRate = exceptions / sample;
+      const materiality = 5 + index;
+      const answer = exceptionRate * 100;
+      text = `${institution} is applying ${cleanConcept} procedures for ${examType} ${level}. In a sample of ${sample} items, the team identifies ${exceptions} control exceptions. Management's tolerance threshold is ${materiality.toFixed(1)}%. Which conclusion is most defensible based on the exception rate?`;
       options = [
-        "The concept should be applied with attention to assumptions, measurement limits, and the economic meaning of each input.",
-        "The concept always produces the same answer regardless of market conditions or model assumptions.",
-        "The concept is valid only when all assets have identical returns and zero volatility.",
-        "The concept eliminates the need for professional judgment in risk assessment.",
+        `The exception rate is ${answer.toFixed(1)}%, so the result should be compared with the ${materiality.toFixed(1)}% tolerance threshold before concluding on control reliance.`,
+        `The exception rate is ${exceptions.toFixed(1)}%, because the number of exceptions itself is the rate.`,
+        `The result is automatically immaterial because the sample contains fewer than ${sample + 20} observations.`,
+        `The control is effective as long as at least one tested item did not show an exception.`,
       ].slice(0, optionCount);
-      stepByStepSolution = "The correct answer is the statement that preserves the role of assumptions, model limits, and economic interpretation. The other choices use absolute wording or unrealistic market conditions, which are rarely valid in CFA or FRM contexts.";
-      knowledgeAnalysis = "Professional exam questions often test how a framework should be used, not just whether the candidate can recite a definition.";
+      stepByStepSolution = `Compute the exception rate as exceptions divided by sample size: ${exceptions} / ${sample} = ${answer.toFixed(1)}%. The rate must then be evaluated against the stated tolerance threshold of ${materiality.toFixed(1)}%. The distractors confuse a count with a rate, rely on arbitrary sample-size wording, or ignore the need to evaluate exceptions against a threshold.`;
+      knowledgeAnalysis = "This tests quantitative interpretation inside an audit-style control evaluation, not just mechanical arithmetic.";
+      examLogicInsight = "The exam trap is to treat the number of exceptions as the conclusion. A professional answer ties the calculated rate back to the audit threshold and control reliance decision.";
+      pointsTested = `${cleanConcept} exception-rate interpretation`;
+    } else if (dimension === "Risk_Management") {
+      text = `${institution} is reviewing ${cleanConcept} evidence ${settings[index % settings.length]}. The ${roles[index % roles.length]} notices that the same employee both approves vendor onboarding and releases payments. Which response best addresses the risk?`;
+      options = [
+        "Treat the issue as a segregation-of-duties weakness and design additional review or approval controls around the payment process.",
+        "Ignore the issue if the employee has significant experience with the process.",
+        "Assume the financial statements are misstated without performing further procedures.",
+        "Reduce documentation because the same employee understands the full workflow.",
+      ].slice(0, optionCount);
+      stepByStepSolution = "The best response identifies the control weakness and connects it to an appropriate risk response. Segregation of duties matters because one person can initiate and complete a transaction without independent review. The other options rely on experience, premature conclusions, or weaker documentation, none of which mitigates the control risk.";
+      knowledgeAnalysis = `${cleanConcept} questions often test whether the candidate can connect evidence to risk response, not merely define a control.`;
+      examLogicInsight = "A common exam trap is choosing an extreme answer such as immediately assuming misstatement. Professional audit reasoning usually requires identifying the weakness and adjusting procedures.";
+      pointsTested = `${cleanConcept} control-risk response`;
+    } else if (dimension === "Sensitivity_Analysis") {
+      text = `${institution} is evaluating ${cleanConcept} ${settings[index % settings.length]}. If the assessed control-risk level increases from low to high, which change in planned procedures is most consistent with exam logic?`;
+      options = [
+        "Increase substantive testing or obtain stronger evidence because reliance on the control environment has decreased.",
+        "Decrease substantive testing because a high control-risk assessment provides more comfort.",
+        "Keep the same audit plan because control-risk assessment never changes evidence requirements.",
+        "Remove analytical procedures because sensitivity to control risk is only relevant in valuation models.",
+      ].slice(0, optionCount);
+      stepByStepSolution = "When assessed control risk rises, the auditor or reviewer can rely less on controls and typically needs stronger substantive evidence. The incorrect options reverse the risk-evidence relationship, claim the audit plan is insensitive to risk, or misclassify sensitivity analysis as only a valuation topic.";
+      knowledgeAnalysis = "This tests how a change in an input assumption affects the evidence strategy and procedure mix.";
+      examLogicInsight = "The trap is directional: higher risk does not reduce work. It usually increases the quantity, quality, or directness of evidence required.";
+      pointsTested = `${cleanConcept} sensitivity to risk assessment`;
+    } else if (dimension === "Case_Study") {
+      text = `${institution} is considering whether a revenue-recognition review under ${cleanConcept} is sufficient. The file includes management explanations, unsigned customer confirmations, and a large quarter-end sales spike. Which next step is most appropriate?`;
+      options = [
+        "Seek more persuasive external evidence around the quarter-end transactions before concluding.",
+        "Accept management explanations because they are internally consistent.",
+        "Conclude immediately that fraud occurred because sales increased near quarter-end.",
+        "Ignore the confirmations because unsigned documents are always stronger than signed external evidence.",
+      ].slice(0, optionCount);
+      stepByStepSolution = "The evidence set contains a risk indicator: a quarter-end spike. Management explanations and unsigned confirmations may not be sufficient. The best response is to obtain more persuasive evidence. The distractors either over-rely on management, jump to a fraud conclusion without sufficient evidence, or misunderstand evidence reliability.";
+      knowledgeAnalysis = "Case-style questions test the hierarchy of evidence, risk indicators, and proportional response.";
+      examLogicInsight = "The exam often rewards the answer that escalates evidence quality without making an unsupported final conclusion.";
+      pointsTested = `${cleanConcept} evidence reliability case`;
+    } else if (dimension === "Reverse_Engineering") {
+      text = `${institution} wants to justify a conclusion that ${cleanConcept} procedures support moderate assurance, not high assurance. Which missing condition would most weaken that conclusion?`;
+      options = [
+        "Key evidence came mostly from internal explanations rather than independent external sources.",
+        "The review team documented the procedures performed and the conclusion reached.",
+        "The workpaper references the period under review and responsible reviewer.",
+        "The sample selection method is described in the file.",
+      ].slice(0, optionCount);
+      stepByStepSolution = "To reverse-engineer the conclusion, identify what condition would make the stated assurance level harder to defend. Heavy reliance on internal explanations weakens the evidence base. Documentation, date references, and sample-method descriptions generally strengthen rather than weaken support.";
+      knowledgeAnalysis = "Reverse-engineering questions ask the candidate to work backward from a conclusion to the assumption that supports or undermines it.";
+      examLogicInsight = "A frequent trap is picking a procedural detail that sounds formal. The stronger answer focuses on evidence reliability and independence.";
+      pointsTested = `${cleanConcept} conclusion support`;
+    } else {
+      const conceptStatements = [
+        `It requires matching the nature and reliability of evidence to the assessed risk, rather than accepting every source equally.`,
+        `It is a structured judgment process in which evidence, controls, and materiality are considered together.`,
+        `It should distinguish between a risk indicator and a final conclusion supported by sufficient evidence.`,
+        `It requires professional skepticism when evidence comes mainly from interested or internal parties.`,
+      ];
+      text = `${institution} is evaluating ${cleanConcept} for ${examType} ${level} ${settings[index % settings.length]}. Which statement best reflects the exam-relevant interpretation of this concept?`;
+      options = [
+        conceptStatements[index % conceptStatements.length],
+        "The concept always produces the same conclusion regardless of evidence quality or assessed risk.",
+        "The concept eliminates the need for professional judgment once a checklist has been completed.",
+        "The concept is valid only when all transactions are identical and no sampling judgment is required.",
+      ].slice(0, optionCount);
+      stepByStepSolution = "The correct answer preserves the role of judgment, evidence quality, and risk assessment. The other choices use absolute wording or unrealistic conditions, which are rarely correct in professional exam settings.";
+      knowledgeAnalysis = "Professional exam questions often test how a framework should be applied in context, not just whether the candidate can recite a definition.";
       examLogicInsight = "Absolute words such as always, only, or eliminates often signal overly broad distractors.";
-      pointsTested = "Conceptual interpretation and model assumptions";
+      pointsTested = `${cleanConcept} conceptual interpretation`;
     }
 
     const shuffled = shuffleOptions(options, correctOptionIndex);
