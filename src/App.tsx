@@ -16,7 +16,9 @@ import {
   History,
   Layers3,
   Loader2,
+  Maximize2,
   Network,
+  Palette,
   Radar,
   RefreshCcw,
   Search,
@@ -35,8 +37,14 @@ import { SAMPLE_TOPICS, STATIC_SAMPLE_PRACTICES } from "./data/samples";
 type Source = "api" | "backup" | "static";
 type Panel = "diagnosis" | "history";
 type SkillStatus = "Weak" | "Medium" | "Strong" | "Baseline";
+type ThemeKey = "nexus" | "mist" | "terminal" | "paper" | "amber";
+type WorkspaceSize = "balanced" | "wide" | "focus";
+type ReadingSize = "standard" | "large" | "xl";
 
 const STORAGE_KEY = "examlogic_saved_practices";
+const THEME_STORAGE_KEY = "harborquant_theme";
+const WORKSPACE_STORAGE_KEY = "harborquant_workspace";
+const READING_STORAGE_KEY = "harborquant_reading";
 const DIMENSIONS = [
   ["Concept_Mastery", "Concept", "Definitions, assumptions, and curriculum rules"],
   ["Calculation", "Calculation", "Formula application and numerical derivation"],
@@ -46,12 +54,20 @@ const DIMENSIONS = [
   ["Reverse_Engineering", "Reverse", "Solve backward from target metrics"],
 ] as const;
 
+const THEMES: { key: ThemeKey; name: string; tone: string; swatch: string }[] = [
+  { key: "nexus", name: "Nexus Dark", tone: "cinematic", swatch: "linear-gradient(135deg,#03070b,#22d3ee,#34d399)" },
+  { key: "mist", name: "Focus Mist", tone: "eye comfort", swatch: "linear-gradient(135deg,#eef7f3,#8dd4c8,#2f8f9d)" },
+  { key: "terminal", name: "Graphite Mint", tone: "low glare", swatch: "linear-gradient(135deg,#101820,#1f8a70,#d8f3dc)" },
+  { key: "paper", name: "Analyst Light", tone: "clean desk", swatch: "linear-gradient(135deg,#f7fafc,#dbeafe,#38bdf8)" },
+  { key: "amber", name: "Warm Focus", tone: "long study", swatch: "linear-gradient(135deg,#17130c,#f6d78b,#22c55e)" },
+];
+
 function levelLabel(level: string) {
   return level.replace("_", " ");
 }
 
 function sourceText(source: Source) {
-  if (source === "api") return "Live AI";
+  if (source === "api") return "Live Engine";
   if (source === "backup") return "Backup Engine";
   return "Curated Sample";
 }
@@ -115,6 +131,9 @@ export default function App() {
   const [saved, setSaved] = useState<SavedPractice[]>([]);
   const [panel, setPanel] = useState<Panel>("diagnosis");
   const [historySearch, setHistorySearch] = useState("");
+  const [theme, setTheme] = useState<ThemeKey>("nexus");
+  const [workspaceSize, setWorkspaceSize] = useState<WorkspaceSize>("wide");
+  const [readingSize, setReadingSize] = useState<ReadingSize>("large");
 
   const activeLevel = examType === ExamType.CFA ? cfaLevel : frmPart;
   const result = score(activeSet, answers);
@@ -127,10 +146,31 @@ export default function App() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setSaved(JSON.parse(raw));
+      const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeKey | null;
+      const storedWorkspace = localStorage.getItem(WORKSPACE_STORAGE_KEY) as WorkspaceSize | null;
+      const storedReading = localStorage.getItem(READING_STORAGE_KEY) as ReadingSize | null;
+      if (storedTheme && THEMES.some((item) => item.key === storedTheme)) setTheme(storedTheme);
+      if (storedWorkspace && ["balanced", "wide", "focus"].includes(storedWorkspace)) setWorkspaceSize(storedWorkspace);
+      if (storedReading && ["standard", "large", "xl"].includes(storedReading)) setReadingSize(storedReading);
     } catch {
       setSaved([]);
     }
   }, []);
+
+  const changeTheme = (next: ThemeKey) => {
+    setTheme(next);
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  };
+
+  const changeWorkspaceSize = (next: WorkspaceSize) => {
+    setWorkspaceSize(next);
+    localStorage.setItem(WORKSPACE_STORAGE_KEY, next);
+  };
+
+  const changeReadingSize = (next: ReadingSize) => {
+    setReadingSize(next);
+    localStorage.setItem(READING_STORAGE_KEY, next);
+  };
 
   const persist = (items: SavedPractice[]) => {
     setSaved(items);
@@ -243,7 +283,7 @@ export default function App() {
 
   const exportSet = () => {
     if (!activeSet) return;
-    const lines = [`ExamLogic AI ${activeSet.examType} ${activeSet.subLevel}`, `Concept: ${activeSet.conceptInput}`, ""];
+    const lines = [`HarborQuant ${activeSet.examType} ${activeSet.subLevel}`, `Concept: ${activeSet.conceptInput}`, ""];
     activeSet.questions.forEach((q, index) => {
       lines.push(`Q${index + 1}. ${q.text}`);
       q.options.forEach((option, optionIndex) => lines.push(`${String.fromCharCode(65 + optionIndex)}. ${option}`));
@@ -254,7 +294,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `ExamLogic_${activeSet.examType}_${activeSet.subLevel}.txt`;
+    link.download = `HarborQuant_${activeSet.examType}_${activeSet.subLevel}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -377,20 +417,31 @@ export default function App() {
     return !query || `${entry.practiceSet.examType} ${entry.practiceSet.subLevel} ${entry.practiceSet.conceptInput}`.toLowerCase().includes(query);
   });
   const launchpads = SAMPLE_TOPICS.filter((topic) => topic.examType === examType && topic.level === activeLevel);
+  const activeTheme = THEMES.find((item) => item.key === theme) || THEMES[0];
+  const shellWidthClass = workspaceSize === "balanced" ? "max-w-[1500px]" : workspaceSize === "wide" ? "max-w-[1760px]" : "max-w-[1840px]";
+  const mainGridClass = workspaceSize === "focus" ? "xl:grid-cols-[330px_minmax(0,1fr)]" : workspaceSize === "wide" ? "xl:grid-cols-[350px_minmax(0,1fr)]" : "xl:grid-cols-[390px_minmax(0,1fr)]";
+  const workspaceGridClass = workspaceSize === "focus" ? "grid gap-5" : workspaceSize === "wide" ? "grid gap-5 2xl:grid-cols-[minmax(0,1fr)_300px]" : "grid gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]";
+  const questionTextClass = readingSize === "standard" ? "text-base leading-7" : readingSize === "large" ? "text-lg leading-8" : "text-xl leading-9";
+  const optionTextClass = readingSize === "standard" ? "text-sm" : readingSize === "large" ? "text-base" : "text-lg";
+  const articlePaddingClass = readingSize === "xl" ? "p-7" : readingSize === "large" ? "p-6" : "p-5";
 
   return (
-    <div className="min-h-screen bg-[#07110f] text-slate-100">
-      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#07110f,#0b1e24_42%,#15180d)]" />
-      <div className="fixed inset-0 -z-10 opacity-[0.12] [background-image:linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] [background-size:42px_42px]" />
+    <div data-theme={theme} className="app-shell min-h-screen bg-[#03070b] text-slate-100">
+      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#03070b,#06131f_38%,#071713_68%,#120f05)]" />
+      <div className="fixed inset-0 -z-10 opacity-[0.16] [background-image:linear-gradient(#22d3ee_1px,transparent_1px),linear-gradient(90deg,#34d399_1px,transparent_1px)] [background-size:48px_48px]" />
+      <div className="fixed inset-x-0 top-0 -z-10 h-40 bg-[linear-gradient(180deg,rgba(34,211,238,.18),transparent)]" />
 
-      <header className="border-b border-cyan-300/15 bg-black/40 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1500px] flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
+      <header className="border-b border-cyan-300/20 bg-black/55 backdrop-blur-xl shadow-[0_18px_80px_rgba(34,211,238,.10)]">
+        <div className={`mx-auto flex ${shellWidthClass} flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between`}>
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-xl font-black text-cyan-200 shadow-[0_0_36px_rgba(34,211,238,0.22)]">EL</div>
+            <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-cyan-300/40 bg-[linear-gradient(135deg,rgba(34,211,238,.25),rgba(52,211,153,.10),rgba(251,191,36,.18))] text-xl font-black text-cyan-100 shadow-[0_0_42px_rgba(34,211,238,0.34)]">
+              <span className="absolute inset-x-0 top-0 h-px bg-cyan-200" />
+              H/Q
+            </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-emerald-300/10 px-2 py-1 text-[10px] font-black uppercase text-emerald-200 ring-1 ring-emerald-300/20">AI Exam OS</span>
-                <h1 className="text-2xl font-black text-white">ExamLogic AI</h1>
+                <span className="rounded bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase text-cyan-200 ring-1 ring-cyan-300/30">Quant Nexus</span>
+                <h1 className="text-2xl font-black text-white">HarborQuant Nexus</h1>
               </div>
               <p className="mt-1 text-sm font-medium text-slate-400">CFA and FRM adaptive exam intelligence console</p>
             </div>
@@ -401,7 +452,7 @@ export default function App() {
               ["Answered", String(intelligence.totalQuestions), Activity],
               ["Engine", sourceText(source), ShieldCheck],
             ].map(([label, value, Icon]: any) => (
-              <div key={label} className="rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,.08),rgba(34,211,238,.06))] px-4 py-3">
+              <div key={label} className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,.09),rgba(34,211,238,.08))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5 text-cyan-300" />{label}</div>
                 <div className="mt-1 text-sm font-black text-white">{value}</div>
               </div>
@@ -410,7 +461,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-[1500px] gap-5 px-5 py-5 xl:grid-cols-[390px_minmax(0,1fr)]">
+      <main className={`mx-auto grid ${shellWidthClass} gap-5 px-5 py-5 ${mainGridClass}`}>
         <aside className="space-y-5">
           <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
@@ -454,11 +505,57 @@ export default function App() {
             <button onClick={() => generate()} disabled={loading} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-3.5 text-sm font-black text-slate-950 shadow-[0_12px_36px_rgba(34,211,238,0.22)] hover:bg-cyan-200 disabled:bg-slate-600">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Generate Exam Set</button>
           </section>
 
+          <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase text-cyan-200">Visual Console</p>
+                <h3 className="mt-1 text-base font-black text-white">Study Appearance</h3>
+              </div>
+              <Palette className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="grid gap-2">
+              {THEMES.map((item) => (
+                <button key={item.key} onClick={() => changeTheme(item.key)} className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left ${theme === item.key ? "border-cyan-300 bg-cyan-300/10" : "border-white/10 bg-black/20 hover:border-cyan-300/30"}`}>
+                  <span className="h-7 w-7 shrink-0 rounded-md border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,.24)]" style={{ background: item.swatch }} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-black text-slate-100">{item.name}</span>
+                    <span className="block text-[10px] font-black uppercase text-slate-500">{item.tone}</span>
+                  </span>
+                  {theme === item.key && <CheckCircle2 className="h-4 w-4 text-cyan-300" />}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 rounded-lg border border-white/10 bg-black/20 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400"><Maximize2 className="h-3.5 w-3.5 text-cyan-300" />Workspace</span>
+                <span className="text-[10px] font-black uppercase text-cyan-200">{activeTheme.name}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ["balanced", "Balanced"],
+                  ["wide", "Wide"],
+                  ["focus", "Focus"],
+                ].map(([key, label]) => (
+                  <button key={key} onClick={() => changeWorkspaceSize(key as WorkspaceSize)} className={`rounded-md border px-2 py-2 text-[11px] font-black ${workspaceSize === key ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>{label}</button>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[
+                  ["standard", "Normal"],
+                  ["large", "Large"],
+                  ["xl", "XL"],
+                ].map(([key, label]) => (
+                  <button key={key} onClick={() => changeReadingSize(key as ReadingSize)} className={`rounded-md border px-2 py-2 text-[11px] font-black ${readingSize === key ? "border-emerald-300 bg-emerald-300 text-slate-950" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>{label}</button>
+                ))}
+              </div>
+            </div>
+          </section>
+
           <section className="rounded-lg border border-cyan-300/20 bg-slate-950/80 p-4 shadow-2xl shadow-cyan-950/20">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase text-cyan-200">Learning Brain</p>
-                <h3 className="mt-1 text-base font-black text-white">AI Dispatch System</h3>
+                <h3 className="mt-1 text-base font-black text-white">Quant Dispatch System</h3>
               </div>
               <BrainCircuit className="h-5 w-5 text-cyan-300" />
             </div>
@@ -479,7 +576,7 @@ export default function App() {
               <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase text-emerald-200"><Send className="h-3.5 w-3.5" />Question Generator Command</div>
               <p className="text-xs font-bold leading-5 text-slate-300">{learningBrain.prompt}</p>
             </div>
-            <button onClick={dispatchBrainInstruction} disabled={loading} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-300 px-4 py-3 text-xs font-black text-slate-950 hover:bg-emerald-200 disabled:bg-slate-600">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}Run AI Instruction</button>
+            <button onClick={dispatchBrainInstruction} disabled={loading} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-300 px-4 py-3 text-xs font-black text-slate-950 hover:bg-emerald-200 disabled:bg-slate-600">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}Run Quant Signal</button>
           </section>
 
           <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
@@ -539,15 +636,16 @@ export default function App() {
           </section>
         </aside>
 
-        <section className="min-h-[720px] overflow-hidden rounded-lg border border-white/10 bg-[#f5f7f2] text-slate-950 shadow-2xl">
-          <div className="border-b border-slate-200 bg-white p-5">
+        <section className="min-h-[720px] overflow-hidden rounded-lg border border-cyan-300/20 bg-[#061018] text-slate-100 shadow-[0_26px_90px_rgba(0,0,0,.55),0_0_42px_rgba(34,211,238,.10)]">
+          <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(2,6,23,.96),rgba(8,24,34,.94),rgba(5,46,40,.70))] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-slate-950 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200">{activeSet ? `${activeSet.examType} ${activeSet.subLevel}` : `${examType} ${levelLabel(activeLevel)}`}</span>
-                  <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-700">{sourceText(source)}</span>
+                  <span className="rounded bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200 ring-1 ring-cyan-300/30">{activeSet ? `${activeSet.examType} ${activeSet.subLevel}` : `${examType} ${levelLabel(activeLevel)}`}</span>
+                  <span className="rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-200">{sourceText(source)}</span>
+                  <span className="rounded border border-amber-300/25 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-amber-200">Adaptive Loop</span>
                 </div>
-                <h2 className="mt-3 max-w-4xl text-xl font-black lg:text-2xl">{activeSet?.conceptInput || "Professional exam intelligence workspace"}</h2>
+                <h2 className="mt-3 max-w-4xl text-xl font-black text-white lg:text-2xl">{activeSet?.conceptInput || "Professional exam intelligence workspace"}</h2>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -555,31 +653,31 @@ export default function App() {
                   ["Score", graded ? `${result.percent}%` : "Pending", BarChart3],
                   ["Saved", String(saved.length), Database],
                 ].map(([label, value, Icon]: any) => (
-                  <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5" />{label}</div>
-                    <div className="mt-1 text-sm font-black">{value}</div>
+                  <div key={label} className="rounded-lg border border-cyan-300/15 bg-white/[0.06] px-3 py-2">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5 text-cyan-300" />{label}</div>
+                    <div className="mt-1 text-sm font-black text-white">{value}</div>
                   </div>
                 ))}
               </div>
             </div>
             {activeSet && (
-              <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-3">
-                <button onClick={exportSet} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-black"><Download className="mr-2 inline h-4 w-4" />Export</button>
-                <button onClick={() => saveCurrent()} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-black text-white"><Bookmark className="mr-2 inline h-4 w-4 text-cyan-200" />Save</button>
+              <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-cyan-300/15 pt-3">
+                <button onClick={exportSet} className="rounded-lg border border-cyan-300/20 bg-white/[0.06] px-3 py-2 text-xs font-black text-slate-200 hover:bg-cyan-300/10"><Download className="mr-2 inline h-4 w-4 text-cyan-300" />Export</button>
+                <button onClick={() => saveCurrent()} className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-black text-slate-950 shadow-[0_0_24px_rgba(34,211,238,.22)]"><Bookmark className="mr-2 inline h-4 w-4" />Save</button>
               </div>
             )}
           </div>
 
           <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-5 lg:p-7">
-            <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className={workspaceGridClass}>
               <div className="min-w-0">
-                {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">{error}</div>}
+                {error && <div className="mb-5 rounded-lg border border-red-400/30 bg-red-950/40 p-4 text-sm font-bold text-red-100">{error}</div>}
                 {loading ? (
-                  <div className="grid gap-4">{[1, 2, 3].map((item) => <div key={item} className="h-48 animate-pulse rounded-lg bg-white" />)}</div>
+                  <div className="grid gap-4">{[1, 2, 3].map((item) => <div key={item} className="h-48 animate-pulse rounded-lg border border-cyan-300/10 bg-white/[0.05]" />)}</div>
                 ) : activeSet ? (
                   <div className="space-y-5">
                     {graded && (
-                      <div className="rounded-lg bg-slate-950 p-5 text-white">
+                      <div className="rounded-lg border border-amber-300/20 bg-[linear-gradient(135deg,rgba(15,23,42,.98),rgba(34,21,5,.85))] p-5 text-white shadow-[0_0_30px_rgba(251,191,36,.12)]">
                         <div className="flex items-center justify-between">
                           <div><div className="text-xs font-black uppercase text-cyan-200"><Target className="mr-2 inline h-4 w-4" />Performance Board</div><div className="mt-2 text-2xl font-black">{result.correct} of {result.total} correct</div></div>
                           <div className="text-5xl font-black text-amber-300">{result.percent}%</div>
@@ -590,57 +688,57 @@ export default function App() {
                       const selected = answers[question.id];
                       const isCorrect = selected === question.correctOptionIndex;
                       return (
-                        <article key={question.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                        <article key={question.id} className={`overflow-hidden rounded-lg border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.96))] ${articlePaddingClass} shadow-[0_16px_55px_rgba(0,0,0,.32)]`}>
                           <div className="mb-4 flex items-center justify-between gap-3">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded bg-slate-950 px-2.5 py-1 text-xs font-black text-white">Q{index + 1}</span>
-                              <span className="rounded bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-500">{question.dimension || "Core"}</span>
-                              <span className="rounded bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase text-amber-700">{question.difficulty}</span>
+                              <span className="rounded bg-cyan-300 px-2.5 py-1 text-xs font-black text-slate-950 shadow-[0_0_18px_rgba(34,211,238,.22)]">Q{index + 1}</span>
+                              <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200">{question.dimension || "Core"}</span>
+                              <span className="rounded border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-amber-200">{question.difficulty}</span>
                             </div>
-                            {graded && <span className={`text-xs font-black ${isCorrect ? "text-emerald-700" : "text-red-700"}`}>{isCorrect ? <CheckCircle2 className="mr-1 inline h-4 w-4" /> : <XCircle className="mr-1 inline h-4 w-4" />}{isCorrect ? "Correct" : "Review"}</span>}
+                            {graded && <span className={`text-xs font-black ${isCorrect ? "text-emerald-300" : "text-red-300"}`}>{isCorrect ? <CheckCircle2 className="mr-1 inline h-4 w-4" /> : <XCircle className="mr-1 inline h-4 w-4" />}{isCorrect ? "Correct" : "Review"}</span>}
                           </div>
-                          <p className="whitespace-pre-line text-base font-bold leading-7">{question.text}</p>
+                          <p className={`whitespace-pre-line font-bold text-slate-100 ${questionTextClass}`}>{question.text}</p>
                           <div className="mt-5 grid gap-3">
                             {question.options.map((option, optionIndex) => {
                               const picked = selected === optionIndex;
                               const correct = question.correctOptionIndex === optionIndex;
-                              let className = "border-slate-200 bg-slate-50 hover:border-slate-400";
-                              if (!graded && picked) className = "border-cyan-500 bg-cyan-50 ring-2 ring-cyan-100";
-                              if (graded && correct) className = "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100";
-                              if (graded && picked && !correct) className = "border-red-500 bg-red-50 ring-2 ring-red-100";
-                              return <button key={optionIndex} disabled={graded} onClick={() => setAnswers({ ...answers, [question.id]: optionIndex })} className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left text-sm font-bold ${className}`}><span className="flex h-7 w-7 items-center justify-center rounded bg-white text-xs font-black ring-1 ring-slate-200">{String.fromCharCode(65 + optionIndex)}</span>{option}</button>;
+                              let className = "border-white/10 bg-white/[0.04] text-slate-200 hover:border-cyan-300/35 hover:bg-cyan-300/[0.06]";
+                              if (!graded && picked) className = "border-cyan-300 bg-cyan-300/10 text-cyan-50 ring-2 ring-cyan-300/20";
+                              if (graded && correct) className = "border-emerald-300 bg-emerald-300/10 text-emerald-50 ring-2 ring-emerald-300/20";
+                              if (graded && picked && !correct) className = "border-red-300 bg-red-300/10 text-red-50 ring-2 ring-red-300/20";
+                              return <button key={optionIndex} disabled={graded} onClick={() => setAnswers({ ...answers, [question.id]: optionIndex })} className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left font-bold ${optionTextClass} ${className}`}><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-slate-950 text-xs font-black text-cyan-200 ring-1 ring-cyan-300/20">{String.fromCharCode(65 + optionIndex)}</span>{option}</button>;
                             })}
                           </div>
                           {graded && (
-                            <div className="mt-5 grid gap-3 border-t border-slate-200 pt-5">
-                              <div className="rounded-lg border border-cyan-100 bg-cyan-50 p-4"><h4 className="text-xs font-black uppercase text-cyan-800">Step-by-step solution</h4><p className="mt-2 whitespace-pre-line text-sm font-medium leading-6">{question.stepByStepSolution}</p></div>
+                            <div className="mt-5 grid gap-3 border-t border-cyan-300/15 pt-5">
+                              <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.06] p-4"><h4 className="text-xs font-black uppercase text-cyan-200">Step-by-step solution</h4><p className="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-200">{question.stepByStepSolution}</p></div>
                               <div className="grid gap-3 lg:grid-cols-2">
-                                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><h4 className="text-xs font-black uppercase text-slate-600">Knowledge analysis</h4><p className="mt-2 text-sm font-medium leading-6">{question.knowledgeAnalysis}</p></div>
-                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4"><h4 className="text-xs font-black uppercase text-amber-700">Examiner logic</h4><p className="mt-2 text-sm font-medium leading-6">{question.examLogicInsight}</p></div>
+                                <div className="rounded-lg border border-white/10 bg-white/[0.05] p-4"><h4 className="text-xs font-black uppercase text-slate-400">Knowledge analysis</h4><p className="mt-2 text-sm font-medium leading-6 text-slate-200">{question.knowledgeAnalysis}</p></div>
+                                <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-4"><h4 className="text-xs font-black uppercase text-amber-200">Examiner logic</h4><p className="mt-2 text-sm font-medium leading-6 text-slate-200">{question.examLogicInsight}</p></div>
                               </div>
                             </div>
                           )}
                         </article>
                       );
                     })}
-                    <div className="sticky bottom-0 rounded-lg border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur">
+                    <div className="sticky bottom-0 rounded-lg border border-cyan-300/15 bg-slate-950/90 p-3 shadow-[0_0_34px_rgba(34,211,238,.12)] backdrop-blur">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="text-sm font-black text-slate-700">Progress {answered} / {activeSet.questions.length}</div>
+                        <div className="text-sm font-black text-slate-300">Progress {answered} / {activeSet.questions.length}</div>
                         <div className="flex gap-2">
-                          {graded && <button onClick={() => { setAnswers({}); setGraded(false); }} className="rounded-lg border px-4 py-2.5 text-sm font-black"><RefreshCcw className="mr-2 inline h-4 w-4" />Reset</button>}
-                          {!graded && <button onClick={grade} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-black text-white"><ClipboardCheck className="mr-2 inline h-4 w-4 text-cyan-200" />Submit and Review</button>}
+                          {graded && <button onClick={() => { setAnswers({}); setGraded(false); }} className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-black text-slate-200"><RefreshCcw className="mr-2 inline h-4 w-4" />Reset</button>}
+                          {!graded && <button onClick={grade} className="rounded-lg bg-cyan-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[0_0_24px_rgba(34,211,238,.22)]"><ClipboardCheck className="mr-2 inline h-4 w-4" />Submit and Review</button>}
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid min-h-[560px] place-items-center rounded-lg border border-dashed border-slate-300 bg-white text-center">
-                    <div className="max-w-xl p-8"><BrainCircuit className="mx-auto h-12 w-12 text-slate-950" /><h2 className="mt-5 text-2xl font-black">Exam intelligence workspace ready</h2><p className="mt-3 text-sm font-medium text-slate-600">Select a CFA or FRM module, enter a curriculum point, and generate a professional practice set.</p></div>
+                  <div className="grid min-h-[560px] place-items-center rounded-lg border border-dashed border-cyan-300/25 bg-white/[0.04] text-center">
+                    <div className="max-w-xl p-8"><BrainCircuit className="mx-auto h-12 w-12 text-cyan-300" /><h2 className="mt-5 text-2xl font-black text-white">Exam intelligence workspace ready</h2><p className="mt-3 text-sm font-medium text-slate-400">Select a CFA or FRM module, enter a curriculum point, and generate a professional practice set.</p></div>
                   </div>
                 )}
               </div>
 
-              <aside className="space-y-4 2xl:sticky 2xl:top-0 2xl:self-start">
+              {workspaceSize !== "focus" && <aside className="space-y-4 2xl:sticky 2xl:top-0 2xl:self-start">
                 <section className="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 text-white shadow-xl">
                   <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(34,211,238,.16),rgba(251,191,36,.08))] p-4">
                     <div className="flex items-center justify-between">
@@ -677,40 +775,40 @@ export default function App() {
                   </div>
                 </section>
 
-                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <section className="rounded-lg border border-amber-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.96))] p-4 shadow-[0_16px_55px_rgba(0,0,0,.26)]">
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-sm font-black"><AlertTriangle className="h-4 w-4 text-amber-600" />Weakness Queue</h3>
-                    <span className="rounded bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">{intelligence.topGaps.length} gaps</span>
+                    <h3 className="flex items-center gap-2 text-sm font-black text-white"><AlertTriangle className="h-4 w-4 text-amber-300" />Weakness Queue</h3>
+                    <span className="rounded bg-amber-300/10 px-2 py-1 text-[10px] font-black text-amber-200 ring-1 ring-amber-300/20">{intelligence.topGaps.length} gaps</span>
                   </div>
                   {intelligence.topGaps.length ? (
                     <div className="space-y-2">
                       {intelligence.topGaps.map((gap) => (
-                        <div key={`${gap.dimension}-${gap.point}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div key={`${gap.dimension}-${gap.point}`} className="rounded-lg border border-white/10 bg-white/[0.05] p-3">
                           <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0"><p className="truncate text-xs font-black">{gap.point}</p><p className="mt-1 text-[10px] font-black uppercase text-slate-500">{dimensionName(gap.dimension)} · {gap.misses} miss{gap.misses > 1 ? "es" : ""}</p></div>
-                            <button onClick={() => startTargetedDrill(gap.point, gap.dimension)} className="shrink-0 rounded-md bg-slate-950 px-2.5 py-1.5 text-[10px] font-black text-white">Drill</button>
+                            <div className="min-w-0"><p className="truncate text-xs font-black text-slate-100">{gap.point}</p><p className="mt-1 text-[10px] font-black uppercase text-slate-500">{dimensionName(gap.dimension)} · {gap.misses} miss{gap.misses > 1 ? "es" : ""}</p></div>
+                            <button onClick={() => startTargetedDrill(gap.point, gap.dimension)} className="shrink-0 rounded-md bg-amber-300 px-2.5 py-1.5 text-[10px] font-black text-slate-950">Drill</button>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-center"><BrainCircuit className="mx-auto h-6 w-6 text-slate-500" /><p className="mt-2 text-xs font-bold text-slate-500">Submit a practice set to activate weakness diagnosis.</p></div>
+                    <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.04] p-4 text-center"><BrainCircuit className="mx-auto h-6 w-6 text-slate-500" /><p className="mt-2 text-xs font-bold text-slate-500">Submit a practice set to activate weakness diagnosis.</p></div>
                   )}
                 </section>
 
-                <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                  <div className="flex items-center gap-2 text-sm font-black text-emerald-900"><TrendingUp className="h-4 w-4" />Adaptive Flow</div>
+                <section className="rounded-lg border border-emerald-300/20 bg-[linear-gradient(180deg,rgba(6,78,59,.24),rgba(2,6,23,.96))] p-4 shadow-[0_16px_55px_rgba(0,0,0,.26)]">
+                  <div className="flex items-center gap-2 text-sm font-black text-emerald-200"><TrendingUp className="h-4 w-4" />Adaptive Flow</div>
                   <div className="mt-3 space-y-2">
                     {adaptiveFlow.map((step, index) => (
-                      <div key={step.label} className="flex items-center gap-3 rounded-md bg-white px-3 py-2">
+                      <div key={step.label} className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.05] px-3 py-2">
                         <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-black ${step.state === "done" ? "bg-emerald-600 text-white" : step.state === "active" ? "bg-slate-950 text-cyan-200" : "bg-slate-100 text-slate-400"}`}>{index + 1}</span>
-                        <div className="min-w-0 flex-1"><div className="truncate text-xs font-black text-emerald-950">{step.label}</div><div className="text-[10px] font-black uppercase text-emerald-700">{step.state}</div></div>
+                        <div className="min-w-0 flex-1"><div className="truncate text-xs font-black text-slate-100">{step.label}</div><div className="text-[10px] font-black uppercase text-emerald-300">{step.state}</div></div>
                       </div>
                     ))}
                   </div>
-                  <button onClick={dispatchBrainInstruction} disabled={loading} className="mt-3 w-full rounded-lg bg-emerald-700 px-3 py-2.5 text-xs font-black text-white disabled:bg-slate-400">Generate Next Flow Step</button>
+                  <button onClick={dispatchBrainInstruction} disabled={loading} className="mt-3 w-full rounded-lg bg-emerald-300 px-3 py-2.5 text-xs font-black text-slate-950 shadow-[0_0_24px_rgba(52,211,153,.20)] disabled:bg-slate-400">Generate Next Flow Step</button>
                 </section>
-              </aside>
+              </aside>}
             </div>
           </div>
         </section>
