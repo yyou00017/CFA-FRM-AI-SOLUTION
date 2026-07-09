@@ -33,6 +33,16 @@ import {
 } from "lucide-react";
 import { ExamType, CFALevel, FRMPart, PracticeSet, SavedPractice } from "./types";
 import { SAMPLE_TOPICS, STATIC_SAMPLE_PRACTICES } from "./data/samples";
+import {
+  AuthSession,
+  BillingProfile,
+  fetchProfile,
+  hasClientAuthConfig,
+  loadSession,
+  saveSession,
+  signIn,
+  signUp,
+} from "./saas";
 
 type Source = "api" | "backup" | "static";
 type Panel = "diagnosis" | "history";
@@ -114,6 +124,11 @@ function qualityTone(value: number) {
   return "text-red-300";
 }
 
+function planName(plan?: string) {
+  if (!plan) return "Free";
+  return plan.charAt(0).toUpperCase() + plan.slice(1);
+}
+
 export default function App() {
   const [examType, setExamType] = useState<ExamType>(ExamType.CFA);
   const [cfaLevel, setCfaLevel] = useState<CFALevel>("Level_1");
@@ -134,6 +149,13 @@ export default function App() {
   const [theme, setTheme] = useState<ThemeKey>("nexus");
   const [workspaceSize, setWorkspaceSize] = useState<WorkspaceSize>("wide");
   const [readingSize, setReadingSize] = useState<ReadingSize>("large");
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [profile, setProfile] = useState<BillingProfile | null>(null);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const activeLevel = examType === ExamType.CFA ? cfaLevel : frmPart;
   const result = score(activeSet, answers);
@@ -156,6 +178,62 @@ export default function App() {
       setSaved([]);
     }
   }, []);
+
+  useEffect(() => {
+    const savedSession = loadSession();
+    if (!savedSession) {
+      fetchProfile(null).then(setProfile).catch(() => undefined);
+      return;
+    }
+    setSession(savedSession);
+    fetchProfile(savedSession)
+      .then(setProfile)
+      .catch(() => {
+        saveSession(null);
+        setSession(null);
+      });
+  }, []);
+
+  const refreshProfile = async (nextSession = session) => {
+    try {
+      const nextProfile = await fetchProfile(nextSession);
+      setProfile(nextProfile);
+    } catch {
+      // Keep the study flow responsive even if profile refresh fails.
+    }
+  };
+
+  const submitAuth = async () => {
+    setAuthError("");
+    if (!hasClientAuthConfig()) {
+      setAuthError("Supabase public settings are not configured yet.");
+      return;
+    }
+    if (!authEmail || authPassword.length < 6) {
+      setAuthError("Enter an email and a password with at least 6 characters.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const nextSession = authMode === "signup" ? await signUp(authEmail, authPassword) : await signIn(authEmail, authPassword);
+      saveSession(nextSession);
+      setSession(nextSession);
+      await refreshProfile(nextSession);
+      setAuthPassword("");
+    } catch (err: any) {
+      setAuthError(err?.message || "Authentication failed.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const signOut = () => {
+    saveSession(null);
+    setSession(null);
+    setProfile(null);
+    setAuthPassword("");
+    fetchProfile(null).then(setProfile).catch(() => undefined);
+  };
 
   const changeTheme = (next: ThemeKey) => {
     setTheme(next);
@@ -212,7 +290,10 @@ export default function App() {
     try {
       const response = await fetch("/api/generate-questions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+        },
         body: JSON.stringify({
           examType,
           level: levelLabel(activeLevel),
@@ -237,6 +318,7 @@ export default function App() {
       setActiveSet(set);
       setSource(data.source === "local-backup" ? "backup" : "api");
       persist([{ id: `saved_${Date.now()}`, practiceSet: set, userAnswers: {}, score: 0, isCompleted: false, savedAt: new Date().toLocaleString() }, ...saved]);
+      refreshProfile();
     } catch (err: any) {
       setError(err?.message || "Unable to generate questions. Please try again.");
     } finally {
@@ -446,17 +528,45 @@ export default function App() {
               <p className="mt-1 text-sm font-medium text-slate-400">CFA and FRM adaptive exam intelligence console</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              ["Readiness", `${intelligence.readiness}%`, Gauge],
-              ["Answered", String(intelligence.totalQuestions), Activity],
-              ["Engine", sourceText(source), ShieldCheck],
-            ].map(([label, value, Icon]: any) => (
-              <div key={label} className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,.09),rgba(34,211,238,.08))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5 text-cyan-300" />{label}</div>
-                <div className="mt-1 text-sm font-black text-white">{value}</div>
-              </div>
-            ))}
+          <div className="grid gap-3 lg:grid-cols-[minmax(300px,420px)_auto] lg:items-stretch">
+            <div className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,.09),rgba(34,211,238,.08))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
+              {session ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase text-cyan-200"><ShieldCheck className="h-3.5 w-3.5" />{planName(profile?.plan)} Plan</div>
+                    <div className="mt-1 truncate text-sm font-black text-white">{profile?.email || session.email}</div>
+                    <div className="mt-1 text-[11px] font-bold text-slate-400">{profile?.credits_remaining ?? "--"} / {profile?.monthly_credit_limit ?? "--"} question credits</div>
+                  </div>
+                  <button onClick={signOut} className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-[11px] font-black text-slate-300 hover:bg-white/5">Sign out</button>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-[10px] font-black uppercase text-cyan-200">{authMode === "signup" ? "Create free account" : "Sign in"}</div>
+                    <button onClick={() => setAuthMode(authMode === "signup" ? "signin" : "signup")} className="text-[10px] font-black uppercase text-slate-400 hover:text-cyan-200">{authMode === "signup" ? "I have an account" : "Create account"}</button>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                    <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="email" className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-xs font-bold outline-none focus:border-cyan-300" />
+                    <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="password" type="password" className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-xs font-bold outline-none focus:border-cyan-300" />
+                    <button onClick={submitAuth} disabled={authLoading} className="rounded-md bg-cyan-300 px-4 py-2 text-xs font-black text-slate-950 disabled:bg-slate-500">{authLoading ? "..." : authMode === "signup" ? "Free" : "Login"}</button>
+                  </div>
+                  {authError && <div className="mt-2 text-[11px] font-bold text-red-300">{authError}</div>}
+                  {!hasClientAuthConfig() && <div className="mt-2 text-[11px] font-bold text-amber-200">Auth is in dev mode until Supabase env vars are added.</div>}
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["Readiness", `${intelligence.readiness}%`, Gauge],
+                ["Answered", String(intelligence.totalQuestions), Activity],
+                ["Engine", sourceText(source), ShieldCheck],
+              ].map(([label, value, Icon]: any) => (
+                <div key={label} className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,.09),rgba(34,211,238,.08))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5 text-cyan-300" />{label}</div>
+                  <div className="mt-1 text-sm font-black text-white">{value}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </header>
