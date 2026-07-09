@@ -1,4 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import {
+  consumeCredits,
+  getBearerToken,
+  hasSupabaseConfig,
+  verifySupabaseUser,
+} from "./_supabase";
 
 const VALID_DIMENSIONS = [
   "Concept_Mastery",
@@ -446,6 +452,27 @@ export default async function handler(req: any, res: any) {
 
   if (!["CFA", "FRM"].includes(examType) || typeof level !== "string" || typeof concept !== "string" || !concept.trim()) {
     return res.status(400).json({ error: "Please provide examType, level, and a non-empty concept." });
+  }
+
+  const token = getBearerToken(req);
+  const user = await verifySupabaseUser(token);
+  if (hasSupabaseConfig() && !user?.id) {
+    return res.status(401).json({ error: "Please sign in to generate questions." });
+  }
+
+  if (user?.id) {
+    const usage = await consumeCredits(user, count, {
+      examType,
+      level,
+      concept: concept.trim(),
+      dimension,
+    });
+    if (usage.insufficient) {
+      return res.status(402).json({
+        error: "You do not have enough question credits. Please upgrade your plan or wait for renewal.",
+        profile: usage.profile,
+      });
+    }
   }
 
   const historyKey = memoryKey(examType, level, concept.trim(), dimension);
