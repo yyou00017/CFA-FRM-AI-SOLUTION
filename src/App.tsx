@@ -9,13 +9,16 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
+  Crown,
   Database,
   Download,
   Flame,
   Gauge,
   History,
+  KeyRound,
   Layers3,
   Loader2,
+  Mail,
   Maximize2,
   Network,
   Palette,
@@ -28,6 +31,7 @@ import {
   Target,
   TrendingUp,
   Trash2,
+  UserPlus,
   Zap,
   XCircle,
 } from "lucide-react";
@@ -506,6 +510,7 @@ export default function App() {
   const questionTextClass = readingSize === "standard" ? "text-base leading-7" : readingSize === "large" ? "text-lg leading-8" : "text-xl leading-9";
   const optionTextClass = readingSize === "standard" ? "text-sm" : readingSize === "large" ? "text-base" : "text-lg";
   const articlePaddingClass = readingSize === "xl" ? "p-7" : readingSize === "large" ? "p-6" : "p-5";
+  const creditPercent = profile?.monthly_credit_limit ? Math.min(100, Math.round(((profile.credits_remaining || 0) / profile.monthly_credit_limit) * 100)) : 0;
 
   return (
     <div data-theme={theme} className="app-shell min-h-screen bg-[#03070b] text-slate-100">
@@ -528,30 +533,77 @@ export default function App() {
               <p className="mt-1 text-sm font-medium text-slate-400">CFA and FRM adaptive exam intelligence console</p>
             </div>
           </div>
-          <div className="grid gap-3 lg:grid-cols-[minmax(300px,420px)_auto] lg:items-stretch">
-            <div className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,.09),rgba(34,211,238,.08))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
+          <div className="grid gap-3 lg:grid-cols-[minmax(430px,560px)_auto] lg:items-stretch">
+            <div className="relative overflow-hidden rounded-lg border border-cyan-300/25 bg-[linear-gradient(135deg,rgba(2,6,23,.92),rgba(8,47,73,.62),rgba(6,78,59,.38))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_18px_60px_rgba(34,211,238,.12)]">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(103,232,249,.9),rgba(110,231,183,.75),transparent)]" />
+              <div className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl" />
               {session ? (
-                <div className="flex items-center justify-between gap-3">
+                <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase text-cyan-200"><ShieldCheck className="h-3.5 w-3.5" />{planName(profile?.plan)} Plan</div>
-                    <div className="mt-1 truncate text-sm font-black text-white">{profile?.email || session.email}</div>
-                    <div className="mt-1 text-[11px] font-bold text-slate-400">{profile?.credits_remaining ?? "--"} / {profile?.monthly_credit_limit ?? "--"} question credits</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-200"><ShieldCheck className="h-3.5 w-3.5" />Verified Access</span>
+                      <span className="inline-flex items-center gap-1.5 rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200"><Crown className="h-3.5 w-3.5" />{planName(profile?.plan)} Plan</span>
+                    </div>
+                    <div className="mt-3 truncate text-base font-black text-white">{profile?.email || session.email}</div>
+                    <div className="mt-3 max-w-sm">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
+                        <span>Question Credits</span>
+                        <span className="text-cyan-200">{profile?.credits_remaining ?? "--"} / {profile?.monthly_credit_limit ?? "--"}</span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-[linear-gradient(90deg,#22d3ee,#34d399,#facc15)]" style={{ width: `${Math.max(creditPercent, profile ? 4 : 0)}%` }} />
+                      </div>
+                    </div>
                   </div>
-                  <button onClick={signOut} className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-[11px] font-black text-slate-300 hover:bg-white/5">Sign out</button>
+                  <button onClick={signOut} className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[11px] font-black uppercase text-slate-300 hover:border-cyan-300/30 hover:bg-cyan-300/10">Sign out</button>
                 </div>
               ) : (
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="text-[10px] font-black uppercase text-cyan-200">{authMode === "signup" ? "Create free account" : "Sign in"}</div>
-                    <button onClick={() => setAuthMode(authMode === "signup" ? "signin" : "signup")} className="text-[10px] font-black uppercase text-slate-400 hover:text-cyan-200">{authMode === "signup" ? "I have an account" : "Create account"}</button>
+                <div className="grid gap-4 xl:grid-cols-[1fr_1.22fr] xl:items-end">
+                  <div className="min-w-0">
+                    <div className="inline-flex items-center gap-2 rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-100">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Candidate Access Console
+                    </div>
+                    <h2 className="mt-3 text-xl font-black tracking-normal text-white">{authMode === "signup" ? "Start with free diagnostic credits." : "Resume your exam cockpit."}</h2>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {[
+                        ["Free", "20 Q"],
+                        ["Skill Map", "Live"],
+                        ["Weakness", "Tracked"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-md border border-white/10 bg-white/[0.05] px-2.5 py-2">
+                          <div className="text-[9px] font-black uppercase text-slate-500">{label}</div>
+                          <div className="mt-1 text-xs font-black text-slate-100">{value}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                    <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="email" className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-xs font-bold outline-none focus:border-cyan-300" />
-                    <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="password" type="password" className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-xs font-bold outline-none focus:border-cyan-300" />
-                    <button onClick={submitAuth} disabled={authLoading} className="rounded-md bg-cyan-300 px-4 py-2 text-xs font-black text-slate-950 disabled:bg-slate-500">{authLoading ? "..." : authMode === "signup" ? "Free" : "Login"}</button>
+                  <div>
+                    <div className="mb-3 flex rounded-md border border-white/10 bg-black/25 p-1">
+                      <button onClick={() => setAuthMode("signup")} className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-[10px] font-black uppercase ${authMode === "signup" ? "bg-cyan-300 text-slate-950" : "text-slate-400 hover:text-cyan-100"}`}><UserPlus className="h-3.5 w-3.5" />Create</button>
+                      <button onClick={() => setAuthMode("signin")} className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-[10px] font-black uppercase ${authMode === "signin" ? "bg-emerald-300 text-slate-950" : "text-slate-400 hover:text-cyan-100"}`}><KeyRound className="h-3.5 w-3.5" />Sign in</button>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                      <label className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2.5 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_24px_rgba(34,211,238,.16)]">
+                        <Mail className="h-4 w-4 shrink-0 text-cyan-300" />
+                        <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="email address" className="min-w-0 flex-1 bg-transparent text-xs font-bold outline-none placeholder:text-slate-600" />
+                      </label>
+                      <label className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2.5 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_24px_rgba(34,211,238,.16)]">
+                        <KeyRound className="h-4 w-4 shrink-0 text-emerald-300" />
+                        <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="password" type="password" className="min-w-0 flex-1 bg-transparent text-xs font-bold outline-none placeholder:text-slate-600" />
+                      </label>
+                    </div>
+                    <button onClick={submitAuth} disabled={authLoading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-[linear-gradient(90deg,#67e8f9,#6ee7b7)] px-4 py-2.5 text-xs font-black uppercase text-slate-950 shadow-[0_12px_34px_rgba(34,211,238,.24)] hover:translate-y-[-1px] disabled:translate-y-0 disabled:bg-slate-500">
+                      {authLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : authMode === "signup" ? <UserPlus className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                      {authLoading ? "Securing..." : authMode === "signup" ? "Activate Free Account" : "Enter Workspace"}
+                    </button>
+                    <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-bold text-slate-500">
+                      <span>Encrypted Supabase identity</span>
+                      <button onClick={() => setAuthMode(authMode === "signup" ? "signin" : "signup")} className="font-black uppercase text-cyan-200 hover:text-white">{authMode === "signup" ? "Already registered" : "Need access"}</button>
+                    </div>
+                    {authError && <div className="mt-2 rounded-md border border-red-300/20 bg-red-300/10 px-3 py-2 text-[11px] font-bold text-red-200">{authError}</div>}
+                    {!hasClientAuthConfig() && <div className="mt-2 rounded-md border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-[11px] font-bold text-amber-100">Auth is in dev mode until Supabase env vars are added.</div>}
                   </div>
-                  {authError && <div className="mt-2 text-[11px] font-bold text-red-300">{authError}</div>}
-                  {!hasClientAuthConfig() && <div className="mt-2 text-[11px] font-bold text-amber-200">Auth is in dev mode until Supabase env vars are added.</div>}
                 </div>
               )}
             </div>
