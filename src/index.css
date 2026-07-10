@@ -300,3 +300,45 @@ select {
 .app-shell[data-theme="paper"] article {
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08) !important;
 }
+
+.app-shell[data-theme] .exam-os,
+.app-shell[data-theme] .exam-os section,
+.app-shell[data-theme] .exam-os article,
+.app-shell[data-theme] .exam-os .sticky {
+  border-color: rgba(34, 211, 238, 0.18) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.97)) !important;
+  color: #e2e8f0 !important;
+}
+
+.app-shell[data-theme] .exam-os .bg-white\/\[0\.04\],
+.app-shell[data-theme] .exam-os .bg-white\/\[0\.05\],
+.app-shell[data-theme] .exam-os .bg-white\/\[0\.06\],
+.app-shell[data-theme] .exam-os .bg-white\/\[0\.08\],
+.app-shell[data-theme] .exam-os .bg-black\/20,
+.app-shell[data-theme] .exam-os .bg-black\/25,
+.app-shell[data-theme] .exam-os .bg-black\/30,
+.app-shell[data-theme] .exam-os .bg-slate-950,
+.app-shell[data-theme] .exam-os .bg-slate-950\/90 {
+  background: rgba(255, 255, 255, 0.055) !important;
+  color: #e2e8f0 !important;
+}
+
+.app-shell[data-theme] .exam-os .text-white,
+.app-shell[data-theme] .exam-os .text-slate-50,
+.app-shell[data-theme] .exam-os .text-slate-100,
+.app-shell[data-theme] .exam-os .text-slate-200,
+.app-shell[data-theme] .exam-os .text-slate-300 {
+  color: #f8fafc !important;
+}
+
+.app-shell[data-theme] .exam-os .text-slate-400,
+.app-shell[data-theme] .exam-os .text-slate-500,
+.app-shell[data-theme] .exam-os .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.app-shell[data-theme] .exam-os .bg-cyan-300,
+.app-shell[data-theme] .exam-os .bg-emerald-300,
+.app-shell[data-theme] .exam-os .bg-amber-300 {
+  color: #061018 !important;
+}
