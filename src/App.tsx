@@ -506,11 +506,12 @@ export default function App() {
   const activeTheme = THEMES.find((item) => item.key === theme) || THEMES[0];
   const shellWidthClass = workspaceSize === "balanced" ? "max-w-[1500px]" : workspaceSize === "wide" ? "max-w-[1760px]" : "max-w-[1840px]";
   const mainGridClass = workspaceSize === "focus" ? "xl:grid-cols-[330px_minmax(0,1fr)]" : workspaceSize === "wide" ? "xl:grid-cols-[350px_minmax(0,1fr)]" : "xl:grid-cols-[390px_minmax(0,1fr)]";
-  const workspaceGridClass = workspaceSize === "focus" ? "grid gap-5" : workspaceSize === "wide" ? "grid gap-5 2xl:grid-cols-[minmax(0,1fr)_300px]" : "grid gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]";
+  const workspaceGridClass = "grid gap-6";
   const questionTextClass = readingSize === "standard" ? "text-base leading-7" : readingSize === "large" ? "text-lg leading-8" : "text-xl leading-9";
   const optionTextClass = readingSize === "standard" ? "text-sm" : readingSize === "large" ? "text-base" : "text-lg";
-  const articlePaddingClass = readingSize === "xl" ? "p-7" : readingSize === "large" ? "p-6" : "p-5";
+  const articlePaddingClass = readingSize === "xl" ? "p-8" : readingSize === "large" ? "p-7" : "p-6";
   const creditPercent = profile?.monthly_credit_limit ? Math.min(100, Math.round(((profile.credits_remaining || 0) / profile.monthly_credit_limit) * 100)) : 0;
+  const readinessDegrees = Math.max(8, intelligence.readiness) * 3.6;
 
   return (
     <div data-theme={theme} className="app-shell min-h-screen bg-[#03070b] text-slate-100">
@@ -892,6 +893,113 @@ export default function App() {
                         </div>
                       </div>
                     </div>
+                    <section className="overflow-hidden rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(2,6,23,.98),rgba(8,24,34,.94),rgba(6,78,59,.35))] shadow-[0_24px_80px_rgba(0,0,0,.36),0_0_42px_rgba(34,211,238,.12)]">
+                      <div className="border-b border-cyan-300/15 p-5">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                          <div>
+                            <p className="flex items-center gap-2 text-[10px] font-black uppercase text-cyan-200"><Network className="h-4 w-4" />Candidate Intelligence Dashboard</p>
+                            <h3 className="mt-2 text-2xl font-black text-white">Your exam readiness system</h3>
+                            <p className="mt-1 max-w-2xl text-sm font-bold text-slate-400">A clear view of readiness, accuracy, coverage, weak points, and the next adaptive step.</p>
+                          </div>
+                          <span className="w-fit rounded border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-[10px] font-black uppercase text-emerald-200">{intelligence.readinessLabel}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 p-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+                        <div className="grid place-items-center rounded-lg border border-white/10 bg-black/25 p-5">
+                          <div className="relative grid h-64 w-64 place-items-center rounded-full shadow-[0_0_55px_rgba(34,211,238,.22)]" style={{ background: `conic-gradient(#22d3ee 0deg, #34d399 ${Math.max(16, readinessDegrees * 0.72)}deg, #facc15 ${readinessDegrees}deg, rgba(255,255,255,.09) ${readinessDegrees}deg 360deg)` }}>
+                            <div className="absolute inset-4 rounded-full bg-slate-950 shadow-[inset_0_0_38px_rgba(0,0,0,.75)]" />
+                            <div className="relative text-center">
+                              <div className="text-[10px] font-black uppercase text-slate-500">Readiness</div>
+                              <div className={`mt-1 text-6xl font-black ${qualityTone(intelligence.readiness)}`}>{intelligence.readiness}%</div>
+                              <div className="mt-1 text-xs font-black uppercase text-cyan-200">{intelligence.readinessLabel}</div>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid w-full grid-cols-2 gap-3">
+                            <div className="rounded-md border border-white/10 bg-white/[0.05] p-3">
+                              <div className="text-[9px] font-black uppercase text-slate-500">Accuracy</div>
+                              <div className="mt-1 text-2xl font-black text-white">{intelligence.accuracy}%</div>
+                            </div>
+                            <div className="rounded-md border border-white/10 bg-white/[0.05] p-3">
+                              <div className="text-[9px] font-black uppercase text-slate-500">Coverage</div>
+                              <div className="mt-1 text-2xl font-black text-white">{intelligence.coverage}%</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-5">
+                          <div className="grid gap-3 md:grid-cols-4">
+                            {[
+                              ["Questions", intelligence.totalQuestions, ClipboardCheck],
+                              ["Correct", intelligence.totalCorrect, CheckCircle2],
+                              ["Saved Sets", completed.length, Database],
+                              ["Coverage", `${intelligence.coverage}%`, Radar],
+                            ].map(([label, value, Icon]: any) => (
+                              <div key={label} className="rounded-lg border border-white/10 bg-white/[0.05] p-4">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500"><Icon className="h-4 w-4 text-cyan-300" />{label}</div>
+                                <div className="mt-2 text-2xl font-black text-white">{value}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
+                            <section className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                              <div className="mb-4 flex items-center justify-between">
+                                <h4 className="flex items-center gap-2 text-sm font-black uppercase text-slate-200"><Network className="h-4 w-4 text-cyan-300" />Skill Map</h4>
+                                <span className="text-[10px] font-black text-slate-500">{intelligence.coverage}% measured</span>
+                              </div>
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {skillMap.map((item) => (
+                                  <div key={item.name} className="rounded-md border border-white/10 bg-black/20 p-3">
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                      <span className="truncate text-xs font-black text-slate-100">{item.name}</span>
+                                      <span className={`rounded px-2 py-1 text-[9px] font-black ${statusClass(item.status)}`}>{item.status}</span>
+                                    </div>
+                                    <div className="h-2 overflow-hidden rounded bg-white/10">
+                                      <div className="h-full rounded bg-[linear-gradient(90deg,#22d3ee,#34d399)]" style={{ width: `${item.attempted ? item.accuracy : 4}%` }} />
+                                    </div>
+                                    <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>{item.attempted ? `${item.accuracy}% accuracy` : "not measured"}</span><span>{item.attempted} Q</span></div>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+
+                            <div className="grid gap-5">
+                              <section className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-4">
+                                <div className="mb-3 flex items-center justify-between">
+                                  <h4 className="flex items-center gap-2 text-sm font-black text-white"><AlertTriangle className="h-4 w-4 text-amber-300" />Weakness Queue</h4>
+                                  <span className="rounded bg-amber-300/10 px-2 py-1 text-[10px] font-black text-amber-200">{intelligence.topGaps.length} gaps</span>
+                                </div>
+                                {intelligence.topGaps.length ? (
+                                  <div className="space-y-2">
+                                    {intelligence.topGaps.slice(0, 3).map((gap) => (
+                                      <div key={`${gap.dimension}-${gap.point}`} className="flex items-start justify-between gap-3 rounded-md border border-white/10 bg-black/20 p-3">
+                                        <div className="min-w-0"><p className="truncate text-xs font-black text-slate-100">{gap.point}</p><p className="mt-1 text-[10px] font-black uppercase text-slate-500">{dimensionName(gap.dimension)} · {gap.misses} miss{gap.misses > 1 ? "es" : ""}</p></div>
+                                        <button onClick={() => startTargetedDrill(gap.point, gap.dimension)} className="shrink-0 rounded-md bg-amber-300 px-2.5 py-1.5 text-[10px] font-black text-slate-950">Drill</button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="rounded-md border border-dashed border-white/15 bg-black/20 p-4 text-center text-xs font-bold text-slate-500">Submit a set to activate weak-point detection.</div>
+                                )}
+                              </section>
+
+                              <section className="rounded-lg border border-emerald-300/20 bg-emerald-300/[0.05] p-4">
+                                <div className="flex items-center gap-2 text-sm font-black text-emerald-200"><TrendingUp className="h-4 w-4" />Adaptive Flow</div>
+                                <div className="mt-3 grid gap-2">
+                                  {adaptiveFlow.map((step, index) => (
+                                    <div key={step.label} className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+                                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-[10px] font-black ${step.state === "done" ? "bg-emerald-500 text-slate-950" : step.state === "active" ? "bg-cyan-300 text-slate-950" : "bg-white/10 text-slate-500"}`}>{index + 1}</span>
+                                      <div className="min-w-0 flex-1"><div className="truncate text-xs font-black text-slate-100">{step.label}</div><div className="text-[10px] font-black uppercase text-emerald-300">{step.state}</div></div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </section>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
                   </div>
                 ) : (
                   <div className="grid min-h-[560px] place-items-center rounded-lg border border-dashed border-cyan-300/25 bg-white/[0.04] text-center">
@@ -899,78 +1007,6 @@ export default function App() {
                   </div>
                 )}
               </div>
-
-              {workspaceSize !== "focus" && <aside className="space-y-4 2xl:sticky 2xl:top-0 2xl:self-start">
-                <section className="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 text-white shadow-xl">
-                  <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(34,211,238,.16),rgba(251,191,36,.08))] p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-cyan-200">Exam Readiness</p>
-                        <h3 className="mt-1 text-xl font-black">{intelligence.readinessLabel}</h3>
-                      </div>
-                      <div className={`text-4xl font-black ${qualityTone(intelligence.readiness)}`}>{intelligence.readiness}%</div>
-                    </div>
-                    <div className="mt-4 h-2 overflow-hidden rounded bg-white/10"><div className="h-full rounded bg-[linear-gradient(90deg,#22d3ee,#34d399,#fbbf24)]" style={{ width: `${Math.max(6, intelligence.readiness)}%` }} /></div>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {[["Questions", intelligence.totalQuestions], ["Accuracy", `${intelligence.accuracy}%`], ["Sets", completed.length]].map(([label, value]) => (
-                        <div key={label} className="rounded-md border border-white/10 bg-white/[0.06] px-2 py-2"><div className="text-[9px] font-black uppercase text-slate-500">{label}</div><div className="mt-1 text-sm font-black">{value}</div></div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="flex items-center gap-2 text-xs font-black uppercase text-slate-300"><Network className="h-4 w-4 text-cyan-300" />Skill Map</h4>
-                      <span className="text-[10px] font-black text-slate-500">{intelligence.coverage}% coverage</span>
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      {skillMap.map((item) => (
-                        <div key={item.name}>
-                          <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-black">
-                            <span className="truncate text-slate-300">{item.name}</span>
-                            <span className={`rounded px-1.5 py-0.5 text-[9px] ${statusClass(item.status)}`}>{item.status}</span>
-                          </div>
-                          <div className="h-1.5 overflow-hidden rounded bg-white/10"><div className="h-full rounded bg-cyan-300" style={{ width: `${item.attempted ? item.accuracy : 4}%` }} /></div>
-                          <div className="mt-1 flex justify-between text-[10px] font-black text-slate-500"><span>{item.attempted ? `${item.accuracy}% accuracy` : "not measured"}</span><span>{item.attempted} Q</span></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                <section className="rounded-lg border border-amber-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.96))] p-4 shadow-[0_16px_55px_rgba(0,0,0,.26)]">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-sm font-black text-white"><AlertTriangle className="h-4 w-4 text-amber-300" />Weakness Queue</h3>
-                    <span className="rounded bg-amber-300/10 px-2 py-1 text-[10px] font-black text-amber-200 ring-1 ring-amber-300/20">{intelligence.topGaps.length} gaps</span>
-                  </div>
-                  {intelligence.topGaps.length ? (
-                    <div className="space-y-2">
-                      {intelligence.topGaps.map((gap) => (
-                        <div key={`${gap.dimension}-${gap.point}`} className="rounded-lg border border-white/10 bg-white/[0.05] p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0"><p className="truncate text-xs font-black text-slate-100">{gap.point}</p><p className="mt-1 text-[10px] font-black uppercase text-slate-500">{dimensionName(gap.dimension)} · {gap.misses} miss{gap.misses > 1 ? "es" : ""}</p></div>
-                            <button onClick={() => startTargetedDrill(gap.point, gap.dimension)} className="shrink-0 rounded-md bg-amber-300 px-2.5 py-1.5 text-[10px] font-black text-slate-950">Drill</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.04] p-4 text-center"><BrainCircuit className="mx-auto h-6 w-6 text-slate-500" /><p className="mt-2 text-xs font-bold text-slate-500">Submit a practice set to activate weakness diagnosis.</p></div>
-                  )}
-                </section>
-
-                <section className="rounded-lg border border-emerald-300/20 bg-[linear-gradient(180deg,rgba(6,78,59,.24),rgba(2,6,23,.96))] p-4 shadow-[0_16px_55px_rgba(0,0,0,.26)]">
-                  <div className="flex items-center gap-2 text-sm font-black text-emerald-200"><TrendingUp className="h-4 w-4" />Adaptive Flow</div>
-                  <div className="mt-3 space-y-2">
-                    {adaptiveFlow.map((step, index) => (
-                      <div key={step.label} className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.05] px-3 py-2">
-                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-black ${step.state === "done" ? "bg-emerald-600 text-white" : step.state === "active" ? "bg-slate-950 text-cyan-200" : "bg-slate-100 text-slate-400"}`}>{index + 1}</span>
-                        <div className="min-w-0 flex-1"><div className="truncate text-xs font-black text-slate-100">{step.label}</div><div className="text-[10px] font-black uppercase text-emerald-300">{step.state}</div></div>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={dispatchBrainInstruction} disabled={loading} className="mt-3 w-full rounded-lg bg-emerald-300 px-3 py-2.5 text-xs font-black text-slate-950 shadow-[0_0_24px_rgba(52,211,153,.20)] disabled:bg-slate-400">Generate Next Flow Step</button>
-                </section>
-              </aside>}
             </div>
           </div>
         </section>
