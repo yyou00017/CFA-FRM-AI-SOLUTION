@@ -624,8 +624,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className={`mx-auto grid ${shellWidthClass} gap-5 px-5 py-5 ${mainGridClass}`}>
-        <aside className="space-y-5">
+      <main className={`mx-auto grid ${shellWidthClass} items-start gap-5 px-5 py-5 ${mainGridClass}`}>
+        <aside className="space-y-5 xl:sticky xl:top-5 xl:max-h-[calc(100vh-40px)] xl:overflow-y-auto xl:pr-1">
           <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -799,7 +799,7 @@ export default function App() {
           </section>
         </aside>
 
-        <section className="exam-os min-h-[720px] overflow-hidden rounded-lg border border-cyan-300/20 bg-[#061018] text-slate-100 shadow-[0_26px_90px_rgba(0,0,0,.55),0_0_42px_rgba(34,211,238,.10)]">
+        <section className="exam-os self-start overflow-hidden rounded-lg border border-cyan-300/20 bg-[#061018] text-slate-100 shadow-[0_26px_90px_rgba(0,0,0,.55),0_0_42px_rgba(34,211,238,.10)] xl:sticky xl:top-5 xl:h-[calc(100vh-40px)]">
           <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(2,6,23,.96),rgba(8,24,34,.94),rgba(5,46,40,.70))] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -831,7 +831,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-5 lg:p-7">
+          <div className="overflow-y-auto p-5 lg:p-7 xl:h-[calc(100vh-210px)]">
             <div className={workspaceGridClass}>
               <div className="min-w-0">
                 {error && <div className="mb-5 rounded-lg border border-red-400/30 bg-red-950/40 p-4 text-sm font-bold text-red-100">{error}</div>}
