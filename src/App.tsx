@@ -160,6 +160,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [guestMode, setGuestMode] = useState(false);
 
   const activeLevel = examType === ExamType.CFA ? cfaLevel : frmPart;
   const result = score(activeSet, answers);
@@ -222,6 +223,7 @@ export default function App() {
       const nextSession = authMode === "signup" ? await signUp(authEmail, authPassword) : await signIn(authEmail, authPassword);
       saveSession(nextSession);
       setSession(nextSession);
+      setGuestMode(false);
       await refreshProfile(nextSession);
       setAuthPassword("");
     } catch (err: any) {
@@ -234,6 +236,7 @@ export default function App() {
   const signOut = () => {
     saveSession(null);
     setSession(null);
+    setGuestMode(false);
     setProfile(null);
     setAuthPassword("");
     fetchProfile(null).then(setProfile).catch(() => undefined);
@@ -512,6 +515,113 @@ export default function App() {
   const articlePaddingClass = readingSize === "xl" ? "p-8" : readingSize === "large" ? "p-7" : "p-6";
   const creditPercent = profile?.monthly_credit_limit ? Math.min(100, Math.round(((profile.credits_remaining || 0) / profile.monthly_credit_limit) * 100)) : 0;
   const readinessDegrees = Math.max(8, intelligence.readiness) * 3.6;
+  const canEnterWorkspace = Boolean(session) || guestMode;
+
+  if (!canEnterWorkspace) {
+    return (
+      <div data-theme={theme} className="app-shell min-h-screen overflow-hidden bg-[#03070b] text-slate-100">
+        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(34,211,238,.22),transparent_28%),radial-gradient(circle_at_82%_24%,rgba(52,211,153,.16),transparent_30%),linear-gradient(135deg,#03070b,#06131f_42%,#071713_72%,#120f05)]" />
+        <div className="fixed inset-0 -z-10 opacity-[0.18] [background-image:linear-gradient(#22d3ee_1px,transparent_1px),linear-gradient(90deg,#34d399_1px,transparent_1px)] [background-size:52px_52px]" />
+        <div className="mx-auto grid min-h-screen max-w-[1500px] grid-cols-1 gap-8 px-6 py-6 lg:grid-cols-[minmax(0,1.06fr)_minmax(420px,.72fr)] lg:items-center">
+          <section className="relative overflow-hidden rounded-lg border border-cyan-300/20 bg-[linear-gradient(145deg,rgba(2,6,23,.82),rgba(8,24,34,.78),rgba(6,78,59,.30))] p-7 shadow-[0_30px_110px_rgba(0,0,0,.52),0_0_70px_rgba(34,211,238,.12)] backdrop-blur-xl lg:p-10">
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,#67e8f9,#6ee7b7,transparent)]" />
+            <div className="flex items-center gap-4">
+              <div className="grid h-16 w-16 place-items-center rounded-lg border border-cyan-300/40 bg-[linear-gradient(135deg,rgba(34,211,238,.28),rgba(52,211,153,.12),rgba(251,191,36,.14))] text-2xl font-black text-cyan-100 shadow-[0_0_48px_rgba(34,211,238,.30)]">H/Q</div>
+              <div>
+                <div className="w-fit rounded bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200 ring-1 ring-cyan-300/30">HarborQuant Nexus</div>
+                <h1 className="mt-2 text-4xl font-black tracking-normal text-white lg:text-6xl">Exam command center for serious CFA and FRM candidates.</h1>
+              </div>
+            </div>
+            <p className="mt-6 max-w-3xl text-lg font-semibold leading-8 text-slate-300">Login first, then enter a focused adaptive workspace that tracks readiness, maps weak skills, generates targeted questions, and routes the next study action.</p>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {[
+                ["Learning Brain", "Routes your next drill from real answer patterns.", BrainCircuit],
+                ["Skill Map", "Shows weak, medium, and strong topic zones.", Network],
+                ["Adaptive Flow", "Moves from baseline to repair to mock simulation.", TrendingUp],
+              ].map(([title, copy, Icon]: any) => (
+                <div key={title} className="rounded-lg border border-white/10 bg-white/[0.055] p-4">
+                  <Icon className="h-5 w-5 text-cyan-300" />
+                  <h3 className="mt-4 text-sm font-black text-white">{title}</h3>
+                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-400">{copy}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-950/70">
+              <div className="flex items-center justify-between border-b border-cyan-300/15 px-4 py-3">
+                <div className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-cyan-300" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-300" /><span className="h-2.5 w-2.5 rounded-full bg-amber-300" /></div>
+                <span className="text-[10px] font-black uppercase text-slate-500">Session preview</span>
+              </div>
+              <div className="grid gap-4 p-4 md:grid-cols-[1fr_220px]">
+                <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+                  <div className="mb-3 flex gap-2"><span className="rounded bg-cyan-300 px-2 py-1 text-[10px] font-black text-slate-950">Q1</span><span className="rounded bg-amber-300/10 px-2 py-1 text-[10px] font-black text-amber-200">MEDIUM</span></div>
+                  <p className="text-sm font-bold leading-6 text-slate-200">A portfolio manager detects a persistent CAPM miss pattern. HarborQuant schedules a foundation repair set before raising difficulty.</p>
+                  <div className="mt-4 grid gap-2">
+                    {["Target weak concept", "Generate distinct exam item", "Record accuracy signal"].map((item) => <div key={item} className="rounded border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-slate-300">{item}</div>)}
+                  </div>
+                </div>
+                <div className="grid place-items-center rounded-md border border-white/10 bg-black/25 p-4">
+                  <div className="grid h-36 w-36 place-items-center rounded-full bg-[conic-gradient(#22d3ee_0deg,#34d399_238deg,rgba(255,255,255,.10)_238deg_360deg)] shadow-[0_0_42px_rgba(34,211,238,.18)]">
+                    <div className="grid h-28 w-28 place-items-center rounded-full bg-slate-950 text-center">
+                      <div><div className="text-[10px] font-black uppercase text-slate-500">Readiness</div><div className="text-3xl font-black text-cyan-200">72%</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.96))] p-5 shadow-[0_30px_90px_rgba(0,0,0,.46),0_0_46px_rgba(34,211,238,.10)] backdrop-blur-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase text-cyan-200">Candidate Access</p>
+                <h2 className="mt-2 text-2xl font-black text-white">{authMode === "signup" ? "Create your workspace" : "Enter your workspace"}</h2>
+              </div>
+              <ShieldCheck className="h-6 w-6 text-emerald-300" />
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2 rounded-lg border border-white/10 bg-black/25 p-1">
+              <button onClick={() => setAuthMode("signup")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signup" ? "bg-cyan-300 text-slate-950" : "text-slate-400"}`}><UserPlus className="mr-2 inline h-4 w-4" />Create</button>
+              <button onClick={() => setAuthMode("signin")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signin" ? "bg-emerald-300 text-slate-950" : "text-slate-400"}`}><KeyRound className="mr-2 inline h-4 w-4" />Sign in</button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <label className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 px-4 py-3 focus-within:border-cyan-300/70">
+                <Mail className="h-4 w-4 text-cyan-300" />
+                <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="email address" className="min-w-0 flex-1 bg-transparent text-sm font-bold outline-none placeholder:text-slate-600" />
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 px-4 py-3 focus-within:border-cyan-300/70">
+                <KeyRound className="h-4 w-4 text-emerald-300" />
+                <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="password" type="password" className="min-w-0 flex-1 bg-transparent text-sm font-bold outline-none placeholder:text-slate-600" />
+              </label>
+              <button onClick={submitAuth} disabled={authLoading} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[linear-gradient(90deg,#67e8f9,#6ee7b7)] px-4 py-3.5 text-sm font-black uppercase text-slate-950 shadow-[0_16px_38px_rgba(34,211,238,.24)] disabled:bg-slate-500">
+                {authLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                {authLoading ? "Securing..." : authMode === "signup" ? "Activate Free Account" : "Enter Workspace"}
+              </button>
+              <button onClick={() => setGuestMode(true)} className="w-full rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-black uppercase text-cyan-100 hover:bg-cyan-300/15">Experience Demo Workspace</button>
+            </div>
+
+            {authError && <div className="mt-4 rounded-md border border-red-300/20 bg-red-300/10 px-3 py-2 text-xs font-bold text-red-200">{authError}</div>}
+            {!hasClientAuthConfig() && <div className="mt-4 rounded-md border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-100">Auth is in dev mode until Supabase env vars are added.</div>}
+
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              {[
+                ["Free", "20 Q"],
+                ["Map", "Live"],
+                ["Path", "Adaptive"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-md border border-white/10 bg-white/[0.05] p-3">
+                  <div className="text-[9px] font-black uppercase text-slate-500">{label}</div>
+                  <div className="mt-1 text-xs font-black text-slate-100">{value}</div>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div data-theme={theme} className="app-shell min-h-screen bg-[#03070b] text-slate-100">
@@ -559,52 +669,16 @@ export default function App() {
                   <button onClick={signOut} className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[11px] font-black uppercase text-slate-300 hover:border-cyan-300/30 hover:bg-cyan-300/10">Sign out</button>
                 </div>
               ) : (
-                <div className="grid gap-4 xl:grid-cols-[1fr_1.22fr] xl:items-end">
+                <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
                   <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-100">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Candidate Access Console
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-100"><Sparkles className="h-3.5 w-3.5" />Demo Session</span>
+                      <span className="inline-flex items-center gap-1.5 rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-200"><ShieldCheck className="h-3.5 w-3.5" />Workspace Preview</span>
                     </div>
-                    <h2 className="mt-3 text-xl font-black tracking-normal text-white">{authMode === "signup" ? "Start with free diagnostic credits." : "Resume your exam cockpit."}</h2>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {[
-                        ["Free", "20 Q"],
-                        ["Skill Map", "Live"],
-                        ["Weakness", "Tracked"],
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-md border border-white/10 bg-white/[0.05] px-2.5 py-2">
-                          <div className="text-[9px] font-black uppercase text-slate-500">{label}</div>
-                          <div className="mt-1 text-xs font-black text-slate-100">{value}</div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="mt-3 text-base font-black text-white">Explore HarborQuant before creating an account.</div>
+                    <p className="mt-2 max-w-xl text-xs font-semibold leading-5 text-slate-400">Use curated sample sets, inspect the dashboard, and test the adaptive flow. Create an account later to save progress and use credits.</p>
                   </div>
-                  <div>
-                    <div className="mb-3 flex rounded-md border border-white/10 bg-black/25 p-1">
-                      <button onClick={() => setAuthMode("signup")} className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-[10px] font-black uppercase ${authMode === "signup" ? "bg-cyan-300 text-slate-950" : "text-slate-400 hover:text-cyan-100"}`}><UserPlus className="h-3.5 w-3.5" />Create</button>
-                      <button onClick={() => setAuthMode("signin")} className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-[10px] font-black uppercase ${authMode === "signin" ? "bg-emerald-300 text-slate-950" : "text-slate-400 hover:text-cyan-100"}`}><KeyRound className="h-3.5 w-3.5" />Sign in</button>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                      <label className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2.5 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_24px_rgba(34,211,238,.16)]">
-                        <Mail className="h-4 w-4 shrink-0 text-cyan-300" />
-                        <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="email address" className="min-w-0 flex-1 bg-transparent text-xs font-bold outline-none placeholder:text-slate-600" />
-                      </label>
-                      <label className="group flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2.5 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_24px_rgba(34,211,238,.16)]">
-                        <KeyRound className="h-4 w-4 shrink-0 text-emerald-300" />
-                        <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="password" type="password" className="min-w-0 flex-1 bg-transparent text-xs font-bold outline-none placeholder:text-slate-600" />
-                      </label>
-                    </div>
-                    <button onClick={submitAuth} disabled={authLoading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-[linear-gradient(90deg,#67e8f9,#6ee7b7)] px-4 py-2.5 text-xs font-black uppercase text-slate-950 shadow-[0_12px_34px_rgba(34,211,238,.24)] hover:translate-y-[-1px] disabled:translate-y-0 disabled:bg-slate-500">
-                      {authLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : authMode === "signup" ? <UserPlus className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-                      {authLoading ? "Securing..." : authMode === "signup" ? "Activate Free Account" : "Enter Workspace"}
-                    </button>
-                    <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-bold text-slate-500">
-                      <span>Encrypted Supabase identity</span>
-                      <button onClick={() => setAuthMode(authMode === "signup" ? "signin" : "signup")} className="font-black uppercase text-cyan-200 hover:text-white">{authMode === "signup" ? "Already registered" : "Need access"}</button>
-                    </div>
-                    {authError && <div className="mt-2 rounded-md border border-red-300/20 bg-red-300/10 px-3 py-2 text-[11px] font-bold text-red-200">{authError}</div>}
-                    {!hasClientAuthConfig() && <div className="mt-2 rounded-md border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-[11px] font-bold text-amber-100">Auth is in dev mode until Supabase env vars are added.</div>}
-                  </div>
+                  <button onClick={() => setGuestMode(false)} className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[11px] font-black uppercase text-slate-300 hover:border-cyan-300/30 hover:bg-cyan-300/10">Back to login</button>
                 </div>
               )}
             </div>
