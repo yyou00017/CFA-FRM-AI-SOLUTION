@@ -799,7 +799,7 @@ export default function App() {
           </section>
         </aside>
 
-        <section className="min-h-[720px] overflow-hidden rounded-lg border border-cyan-300/20 bg-[#061018] text-slate-100 shadow-[0_26px_90px_rgba(0,0,0,.55),0_0_42px_rgba(34,211,238,.10)]">
+        <section className="exam-os min-h-[720px] overflow-hidden rounded-lg border border-cyan-300/20 bg-[#061018] text-slate-100 shadow-[0_26px_90px_rgba(0,0,0,.55),0_0_42px_rgba(34,211,238,.10)]">
           <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(2,6,23,.96),rgba(8,24,34,.94),rgba(5,46,40,.70))] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
