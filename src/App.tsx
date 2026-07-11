@@ -519,157 +519,205 @@ export default function App() {
 
   if (!canEnterWorkspace) {
     return (
-      <div data-theme="nexus" className="app-shell min-h-screen overflow-x-hidden bg-[#03070b] text-slate-100">
-        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(34,211,238,.20),transparent_31%),radial-gradient(circle_at_78%_20%,rgba(52,211,153,.14),transparent_32%),linear-gradient(135deg,#03070b,#07131d_46%,#071713_78%,#0b0905)]" />
-        <div className="fixed inset-0 -z-10 opacity-[0.12] [background-image:linear-gradient(#22d3ee_1px,transparent_1px),linear-gradient(90deg,#34d399_1px,transparent_1px)] [background-size:56px_56px]" />
-        <div className="fixed inset-x-0 top-0 -z-10 h-52 bg-[linear-gradient(180deg,rgba(34,211,238,.14),transparent)]" />
+      <div data-theme="nexus" className="app-shell min-h-screen overflow-x-hidden bg-[#f6f8fb] text-slate-950">
+        <div className="fixed inset-x-0 top-0 -z-10 h-[560px] bg-[linear-gradient(135deg,#06111f_0%,#0b2734_44%,#0e3b36_72%,#f6f8fb_72%)]" />
+        <div className="fixed inset-x-0 top-0 -z-10 h-[560px] opacity-[0.16] [background-image:linear-gradient(#67e8f9_1px,transparent_1px),linear-gradient(90deg,#67e8f9_1px,transparent_1px)] [background-size:54px_54px]" />
+        <div className="fixed right-0 top-0 -z-10 h-[520px] w-[52vw] bg-[radial-gradient(circle_at_68%_24%,rgba(103,232,249,.34),transparent_34%),radial-gradient(circle_at_82%_54%,rgba(110,231,183,.22),transparent_30%)]" />
 
-        <div className="mx-auto flex min-h-screen max-w-[1540px] flex-col px-6 py-5">
-          <nav className="flex items-center justify-between">
+        <div className="mx-auto flex min-h-screen max-w-[1480px] flex-col px-5 py-5 sm:px-7">
+          <nav className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.08] px-4 py-3 text-white shadow-[0_18px_70px_rgba(0,0,0,.16)] backdrop-blur-xl">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-lg border border-cyan-300/35 bg-[linear-gradient(135deg,rgba(34,211,238,.24),rgba(52,211,153,.10))] text-base font-black text-cyan-100 shadow-[0_0_34px_rgba(34,211,238,.22)]">H/Q</div>
+              <div className="grid h-11 w-11 place-items-center rounded-md border border-cyan-200/40 bg-white/10 text-base font-black text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,.22)]">H/Q</div>
               <div>
                 <div className="text-base font-black text-white">HarborQuant</div>
-                <div className="text-[10px] font-black uppercase text-slate-500">CFA and FRM intelligence terminal</div>
+                <div className="text-[10px] font-black uppercase tracking-normal text-cyan-100/70">CFA and FRM candidate portal</div>
               </div>
             </div>
-            <div className="hidden items-center gap-3 lg:flex">
-              {["Diagnostics", "Skill Map", "Adaptive Flow"].map((item) => <span key={item} className="text-[11px] font-black uppercase text-slate-500">{item}</span>)}
+            <div className="hidden items-center gap-7 lg:flex">
+              {["Diagnostic Engine", "Skill Map", "Study Plans", "Mock Readiness"].map((item) => <span key={item} className="text-[11px] font-black uppercase tracking-normal text-cyan-100/72">{item}</span>)}
+            </div>
+            <div className="hidden items-center gap-2 rounded-md border border-cyan-200/25 bg-cyan-200/10 px-3 py-2 text-xs font-black text-cyan-100 sm:flex">
+              <ShieldCheck className="h-4 w-4" />
+              Secure Access
             </div>
           </nav>
 
-          <div className="grid flex-1 gap-7 py-7 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-center xl:grid-cols-[minmax(0,1.08fr)_460px]">
-            <section className="min-w-0">
+          <div className="grid flex-1 gap-7 py-7 lg:grid-cols-[minmax(0,1fr)_430px] xl:grid-cols-[minmax(0,1.08fr)_465px]">
+            <section className="min-w-0 pt-8 text-white lg:pt-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase text-cyan-100">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,.8)]" />
-                Professional exam operating system
+                Built for finance exam candidates
               </div>
-              <h1 className="mt-6 max-w-5xl text-5xl font-black leading-[1.02] tracking-normal text-white lg:text-7xl">A sharper cockpit for CFA and FRM preparation.</h1>
-              <p className="mt-6 max-w-3xl text-lg font-semibold leading-8 text-slate-300">HarborQuant turns practice sessions into measurable readiness, weak-point repair, and adaptive question flow.</p>
+              <h1 className="mt-6 max-w-5xl text-5xl font-black leading-[1.02] tracking-normal text-white lg:text-7xl">Prepare for CFA and FRM with a measurable study system.</h1>
+              <p className="mt-6 max-w-3xl text-lg font-semibold leading-8 text-slate-200">HarborQuant combines diagnostic practice, weak-point repair, and adaptive exam sets so candidates can see exactly what to study next.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button onClick={() => setAuthMode("signup")} className="rounded-md bg-[linear-gradient(90deg,#67e8f9,#6ee7b7)] px-5 py-3 text-sm font-black uppercase text-slate-950 shadow-[0_18px_46px_rgba(103,232,249,.22)]">Start Free Diagnostic</button>
+                <button onClick={() => setGuestMode(true)} className="rounded-md border border-white/20 bg-white/10 px-5 py-3 text-sm font-black uppercase text-white backdrop-blur">Explore Demo</button>
+              </div>
 
               <div className="mt-8 grid max-w-4xl gap-3 md:grid-cols-3">
                 {[
-                  ["Readiness", "72%", "live benchmark"],
-                  ["Coverage", "34 topics", "mapped by concept"],
-                  ["Repair Loop", "4 steps", "baseline to mock"],
+                  ["Diagnostic credits", "20 Q", "free account"],
+                  ["Skill coverage", "34 topics", "CFA and FRM"],
+                  ["Study flow", "4 stages", "diagnose to mock"],
                 ].map(([label, value, note]) => (
-                  <div key={label} className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
-                    <div className="text-[10px] font-black uppercase text-slate-500">{label}</div>
+                  <div key={label} className="rounded-lg border border-white/14 bg-white/[0.09] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.10)] backdrop-blur">
+                    <div className="text-[10px] font-black uppercase tracking-normal text-cyan-100/65">{label}</div>
                     <div className="mt-2 text-3xl font-black text-white">{value}</div>
                     <div className="mt-1 text-[11px] font-bold uppercase text-cyan-200">{note}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-7 overflow-hidden rounded-lg border border-cyan-300/18 bg-[linear-gradient(180deg,rgba(15,23,42,.88),rgba(2,6,23,.96))] shadow-[0_28px_90px_rgba(0,0,0,.38),0_0_42px_rgba(34,211,238,.10)]">
-                <div className="flex items-center justify-between border-b border-cyan-300/15 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-cyan-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+              <div className="mt-10 overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-950 shadow-[0_30px_90px_rgba(15,23,42,.18)]">
+                <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-normal text-slate-500">Readiness report preview</p>
+                    <h2 className="mt-1 text-xl font-black text-slate-950">Candidate performance dashboard</h2>
                   </div>
-                  <span className="text-[10px] font-black uppercase text-slate-500">Adaptive session preview</span>
+                  <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-700">Live path</span>
                 </div>
-                <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_270px]">
-                  <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      <span className="rounded bg-cyan-300 px-2.5 py-1 text-[10px] font-black text-slate-950">CAPM</span>
-                      <span className="rounded border border-amber-300/25 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black text-amber-200">MEDIUM</span>
-                      <span className="rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black text-emerald-200">REPAIR SET</span>
-                    </div>
-                    <p className="text-base font-black leading-7 text-slate-100">The system detects repeated misses in required return logic, then schedules a focused repair set before moving to mixed exam simulation.</p>
-                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+                  <div>
+                    <div className="grid gap-3 sm:grid-cols-3">
                       {[
-                        ["1", "Baseline"],
-                        ["2", "Weak-point drill"],
-                        ["3", "Difficulty lift"],
-                      ].map(([step, label]) => (
-                        <div key={label} className="rounded-md border border-white/10 bg-black/20 p-3">
-                          <div className="flex h-7 w-7 items-center justify-center rounded bg-cyan-300 text-[10px] font-black text-slate-950">{step}</div>
-                          <div className="mt-3 text-xs font-black text-slate-100">{label}</div>
+                        ["Questions", "128", "+36 this week"],
+                        ["Accuracy", "76%", "rising"],
+                        ["Weak topics", "5", "repair queued"],
+                      ].map(([label, value, note]) => (
+                        <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                          <div className="text-[9px] font-black uppercase tracking-normal text-slate-500">{label}</div>
+                          <div className="mt-2 text-2xl font-black text-slate-950">{value}</div>
+                          <div className="mt-1 text-[10px] font-bold uppercase text-cyan-700">{note}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      {[
+                        ["CAPM", "45%", "Repair now", "bg-red-400"],
+                        ["Derivatives", "62%", "Build confidence", "bg-amber-400"],
+                        ["Fixed Income", "84%", "Maintain", "bg-emerald-400"],
+                      ].map(([topic, score, label, color]) => (
+                        <div key={topic} className="rounded-md border border-slate-200 p-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-sm font-black text-slate-950">{topic}</span>
+                            <span className="text-xs font-black text-slate-500">{score}</span>
+                          </div>
+                          <div className="mt-2 h-2 rounded-full bg-slate-100">
+                            <div className={`h-full rounded-full ${color}`} style={{ width: score }} />
+                          </div>
+                          <div className="mt-2 text-[10px] font-black uppercase tracking-normal text-slate-500">{label}</div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="grid place-items-center rounded-lg border border-white/10 bg-black/25 p-5">
-                    <div className="grid h-44 w-44 place-items-center rounded-full bg-[conic-gradient(#22d3ee_0deg,#34d399_238deg,rgba(255,255,255,.10)_238deg_360deg)] shadow-[0_0_56px_rgba(34,211,238,.18)]">
-                      <div className="grid h-[8.5rem] w-[8.5rem] place-items-center rounded-full bg-slate-950 text-center">
-                        <div>
-                          <div className="text-[10px] font-black uppercase text-slate-500">Readiness</div>
-                          <div className="text-4xl font-black text-cyan-200">72%</div>
-                          <div className="text-[10px] font-black uppercase text-emerald-200">Acceleration</div>
+                  <div className="rounded-lg border border-cyan-200 bg-[linear-gradient(180deg,#ecfeff,#ffffff)] p-4">
+                    <p className="text-[10px] font-black uppercase tracking-normal text-cyan-700">Next recommended block</p>
+                    <h3 className="mt-2 text-2xl font-black leading-tight text-slate-950">CAPM repair set</h3>
+                    <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">Focused practice on required return, beta interpretation, and inflation-adjusted assumptions.</p>
+                    <div className="mt-5 space-y-2">
+                      {["Concept check", "Formula drill", "Mixed scenario"].map((item, index) => (
+                        <div key={item} className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm">
+                          <span className="grid h-5 w-5 place-items-center rounded bg-cyan-100 text-[10px] text-cyan-700">{index + 1}</span>
+                          {item}
                         </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid w-full grid-cols-2 gap-2">
-                      <div className="rounded-md border border-white/10 bg-white/[0.05] p-3"><div className="text-[9px] font-black uppercase text-slate-500">Accuracy</div><div className="mt-1 text-xl font-black text-white">81%</div></div>
-                      <div className="rounded-md border border-white/10 bg-white/[0.05] p-3"><div className="text-[9px] font-black uppercase text-slate-500">Saved</div><div className="mt-1 text-xl font-black text-white">31</div></div>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <aside className="relative overflow-hidden rounded-lg border border-cyan-300/22 bg-[linear-gradient(180deg,rgba(15,23,42,.94),rgba(2,6,23,.98))] p-6 shadow-[0_34px_100px_rgba(0,0,0,.48),0_0_48px_rgba(34,211,238,.10)] backdrop-blur-xl">
-              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,#67e8f9,#6ee7b7,transparent)]" />
+            <aside className="self-start rounded-lg border border-slate-200 bg-white p-6 text-slate-950 shadow-[0_30px_90px_rgba(15,23,42,.22)] lg:sticky lg:top-6 lg:mt-10">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-black uppercase text-cyan-200">Secure candidate access</p>
-                  <h2 className="mt-2 text-3xl font-black text-white">{authMode === "signup" ? "Create workspace" : "Welcome back"}</h2>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-400">{authMode === "signup" ? "Start with free diagnostic credits." : "Continue your adaptive study path."}</p>
+                  <p className="text-[10px] font-black uppercase tracking-normal text-cyan-700">Candidate account</p>
+                  <h2 className="mt-2 text-3xl font-black text-slate-950">{authMode === "signup" ? "Create your study workspace" : "Sign in to HarborQuant"}</h2>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{authMode === "signup" ? "Begin with free diagnostic credits and a personal skill map." : "Continue your saved question history and readiness path."}</p>
                 </div>
-                <ShieldCheck className="h-6 w-6 shrink-0 text-emerald-300" />
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-slate-950 text-cyan-200">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-white/10 bg-black/25 p-1">
-                <button onClick={() => setAuthMode("signup")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signup" ? "bg-cyan-300 text-slate-950" : "text-slate-400 hover:bg-white/5"}`}><UserPlus className="mr-2 inline h-4 w-4" />Create</button>
-                <button onClick={() => setAuthMode("signin")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signin" ? "bg-emerald-300 text-slate-950" : "text-slate-400 hover:bg-white/5"}`}><KeyRound className="mr-2 inline h-4 w-4" />Sign in</button>
+              <div className="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-slate-100 p-1">
+                <button onClick={() => setAuthMode("signup")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signup" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:bg-white"}`}><UserPlus className="mr-2 inline h-4 w-4" />Create</button>
+                <button onClick={() => setAuthMode("signin")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signin" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:bg-white"}`}><KeyRound className="mr-2 inline h-4 w-4" />Sign in</button>
               </div>
 
               <div className="mt-6 space-y-3">
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase text-slate-500">Email</span>
-                  <span className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 px-4 py-3 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_28px_rgba(34,211,238,.14)]">
-                    <Mail className="h-4 w-4 text-cyan-300" />
-                    <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@domain.com" className="min-w-0 flex-1 bg-transparent text-sm font-bold outline-none placeholder:text-slate-600" />
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-normal text-slate-500">Email</span>
+                  <span className="flex items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 focus-within:border-cyan-500 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,.12)]">
+                    <Mail className="h-4 w-4 text-cyan-600" />
+                    <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@domain.com" className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400" />
                   </span>
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase text-slate-500">Password</span>
-                  <span className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 px-4 py-3 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_28px_rgba(34,211,238,.14)]">
-                    <KeyRound className="h-4 w-4 text-emerald-300" />
-                    <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="minimum 6 characters" type="password" className="min-w-0 flex-1 bg-transparent text-sm font-bold outline-none placeholder:text-slate-600" />
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-normal text-slate-500">Password</span>
+                  <span className="flex items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 focus-within:border-cyan-500 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,.12)]">
+                    <KeyRound className="h-4 w-4 text-emerald-600" />
+                    <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="minimum 6 characters" type="password" className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400" />
                   </span>
                 </label>
-                <button onClick={submitAuth} disabled={authLoading} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[linear-gradient(90deg,#67e8f9,#6ee7b7)] px-4 py-3.5 text-sm font-black uppercase text-slate-950 shadow-[0_16px_42px_rgba(34,211,238,.24)] hover:translate-y-[-1px] disabled:translate-y-0 disabled:bg-slate-500">
+                <button onClick={submitAuth} disabled={authLoading} className="flex w-full items-center justify-center gap-2 rounded-md bg-[linear-gradient(90deg,#0f172a,#0e7490)] px-4 py-3.5 text-sm font-black uppercase text-white shadow-[0_16px_40px_rgba(15,23,42,.22)] hover:translate-y-[-1px] disabled:translate-y-0 disabled:bg-slate-500">
                   {authLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  {authLoading ? "Securing..." : authMode === "signup" ? "Activate Free Account" : "Enter Workspace"}
+                  {authLoading ? "Securing..." : authMode === "signup" ? "Start Free Diagnostic" : "Enter Workspace"}
                 </button>
-                <button onClick={() => setGuestMode(true)} className="w-full rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-black uppercase text-cyan-100 hover:bg-cyan-300/15">Preview Demo Workspace</button>
+                <button onClick={() => setGuestMode(true)} className="w-full rounded-md border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black uppercase text-cyan-800 hover:bg-cyan-100">Preview Demo Workspace</button>
               </div>
 
-              {authError && <div className="mt-4 rounded-md border border-red-300/20 bg-red-300/10 px-3 py-2 text-xs font-bold text-red-200">{authError}</div>}
-              {!hasClientAuthConfig() && <div className="mt-4 rounded-md border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-100">Auth is in dev mode until Supabase env vars are added.</div>}
+              {authError && <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{authError}</div>}
+              {!hasClientAuthConfig() && <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">Auth is in dev mode until Supabase env vars are added.</div>}
 
-              <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.045] p-4">
+              <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-black uppercase text-slate-500">Included at launch</span>
-                  <span className="rounded bg-emerald-300/10 px-2 py-1 text-[10px] font-black uppercase text-emerald-200">Free diagnostic</span>
+                  <span className="text-[10px] font-black uppercase tracking-normal text-slate-500">What your account stores</span>
+                  <span className="rounded bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700">Personalized</span>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   {[
                     ["Credits", "20 Q"],
-                    ["Map", "Live"],
-                    ["Path", "Adaptive"],
+                    ["Skill Map", "Live"],
+                    ["History", "Saved"],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-md border border-white/10 bg-black/20 p-3">
-                      <div className="text-[9px] font-black uppercase text-slate-500">{label}</div>
-                      <div className="mt-1 text-xs font-black text-slate-100">{value}</div>
+                    <div key={label} className="rounded-md border border-slate-200 bg-white p-3">
+                      <div className="text-[9px] font-black uppercase tracking-normal text-slate-500">{label}</div>
+                      <div className="mt-1 text-xs font-black text-slate-950">{value}</div>
                     </div>
                   ))}
                 </div>
               </div>
+
+              <div className="mt-5 space-y-2 border-t border-slate-200 pt-5">
+                {[
+                  "Adaptive question sets for CFA and FRM",
+                  "Weak-topic tracking by concept",
+                  "Progress saved after login",
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    {item}
+                  </div>
+                ))}
+              </div>
             </aside>
+          </div>
+
+          <div className="grid gap-4 pb-7 md:grid-cols-3">
+            {[
+              ["For CFA candidates", "Level I to Level III practice paths with formula, concept, and case dimensions."],
+              ["For FRM candidates", "Risk, valuation, market structure, and quantitative repair loops."],
+              ["For long study cycles", "A clear dashboard keeps daily progress, weak points, and next steps visible."],
+            ].map(([title, note]) => (
+              <div key={title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_16px_44px_rgba(15,23,42,.08)]">
+                <div className="mb-3 grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-cyan-200">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-black text-slate-950">{title}</h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{note}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
