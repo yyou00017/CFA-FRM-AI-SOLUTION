@@ -163,6 +163,10 @@ export default function App() {
       });
   }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [guestMode, session]);
+
   const refreshProfile = async (nextSession = session) => {
     try {
       setProfile(await fetchProfile(nextSession));
