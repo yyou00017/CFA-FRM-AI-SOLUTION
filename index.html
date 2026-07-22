@@ -3,40 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d212c" />
     <meta
       name="description"
-      content="HarborQuant generates original CFA and FRM practice questions with explanations, grading history, and cognitive-dimension diagnostics."
+      content="Kensworth Institute of Finance provides structured CFA and FRM practice, worked rationales and a candidate learning record."
     />
-    <title>HarborQuant - CFA & FRM Practice Generator</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Kensworth Institute of Finance" />
+    <meta property="og:description" content="Serious preparation for demanding finance examinations." />
+    <meta property="og:image" content="https://cfa-frm-ai-solution.vercel.app/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kensworth Institute of Finance" />
+    <meta name="twitter:description" content="Serious preparation for demanding finance examinations." />
+    <meta name="twitter:image" content="https://cfa-frm-ai-solution.vercel.app/og.jpg" />
+    <title>Kensworth Institute of Finance | CFA &amp; FRM Preparation</title>
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      window.__HARBORQUANT_BRAND_SYNC__ = function () {
-        var replacements = [
-          ["ExamLogic AI Command Center", "HarborQuant Nexus"],
-          ["HarborQuant Command Center", "HarborQuant Nexus"],
-          ["ExamLogic AI", "HarborQuant"],
-          ["AI Finance OS", "Quant Nexus"],
-          ["AI Exam OS", "Quant Nexus"],
-          ["Live AI", "Live Engine"],
-          ["AI Dispatch System", "Quant Dispatch System"],
-          ["Run AI Instruction", "Run Quant Signal"],
-          ["EL", "H/Q"]
-        ];
-        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-        var node;
-        while ((node = walker.nextNode())) {
-          var text = node.nodeValue || "";
-          replacements.forEach(function (pair) {
-            text = text.split(pair[0]).join(pair[1]);
-          });
-          node.nodeValue = text;
-        }
-      };
-      new MutationObserver(window.__HARBORQUANT_BRAND_SYNC__).observe(document.getElementById("root"), { childList: true, subtree: true });
-      window.__HARBORQUANT_BRAND_SYNC__();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

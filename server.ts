@@ -17,7 +17,7 @@ function getGenAI() {
   if (!aiClient) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is required. Please populate it in the Secrets panel in AI Studio.");
+      throw new Error("GEMINI_API_KEY is required. Add it to the project environment settings.");
     }
     aiClient = new GoogleGenAI({
       apiKey,

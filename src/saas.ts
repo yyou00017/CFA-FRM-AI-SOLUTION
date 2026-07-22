@@ -11,7 +11,8 @@ export type BillingProfile = {
   monthly_credit_limit: number;
 };
 
-const SESSION_KEY = "harborquant_session";
+const SESSION_KEY = "kensworth_session";
+const LEGACY_SESSION_KEY = "harborquant_session";
 
 function supabaseUrl() {
   return import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
@@ -37,7 +38,8 @@ function authHeaders(token?: string) {
 
 export function loadSession(): AuthSession | null {
   try {
-    const raw = localStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(SESSION_KEY) || localStorage.getItem(LEGACY_SESSION_KEY);
+    if (raw && !localStorage.getItem(SESSION_KEY)) localStorage.setItem(SESSION_KEY, raw);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -47,6 +49,7 @@ export function loadSession(): AuthSession | null {
 export function saveSession(session: AuthSession | null) {
   if (!session) {
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(LEGACY_SESSION_KEY);
     return;
   }
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));

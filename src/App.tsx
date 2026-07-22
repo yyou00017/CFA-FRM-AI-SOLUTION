@@ -1,39 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity,
-  AlertTriangle,
-  Award,
-  BarChart3,
+  ArrowRight,
   Bookmark,
-  BrainCircuit,
-  CheckCircle2,
+  BookOpen,
+  Check,
   ChevronRight,
+  CircleAlert,
   ClipboardCheck,
-  Crown,
-  Database,
   Download,
-  Flame,
-  Gauge,
-  History,
   KeyRound,
-  Layers3,
   Loader2,
+  LogIn,
+  LogOut,
   Mail,
-  Maximize2,
-  Network,
-  Palette,
-  Radar,
-  RefreshCcw,
+  RefreshCw,
   Search,
-  Send,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  TrendingUp,
   Trash2,
   UserPlus,
-  Zap,
-  XCircle,
 } from "lucide-react";
 import { ExamType, CFALevel, FRMPart, PracticeSet, SavedPractice } from "./types";
 import { SAMPLE_TOPICS, STATIC_SAMPLE_PRACTICES } from "./data/samples";
@@ -48,89 +31,73 @@ import {
   signUp,
 } from "./saas";
 
-type Source = "api" | "backup" | "static";
-type Panel = "diagnosis" | "history";
-type SkillStatus = "Weak" | "Medium" | "Strong" | "Baseline";
-type ThemeKey = "nexus" | "mist" | "terminal" | "paper" | "amber";
-type WorkspaceSize = "balanced" | "wide" | "focus";
-type ReadingSize = "standard" | "large" | "xl";
+type QuestionSource = "api" | "backup" | "static";
+type WorkspaceView = "practice" | "record" | "history";
 
-const STORAGE_KEY = "examlogic_saved_practices";
-const THEME_STORAGE_KEY = "harborquant_theme";
-const WORKSPACE_STORAGE_KEY = "harborquant_workspace";
-const READING_STORAGE_KEY = "harborquant_reading";
+const STORAGE_KEY = "kensworth_saved_practices";
+const LEGACY_STORAGE_KEY = "examlogic_saved_practices";
+
 const DIMENSIONS = [
-  ["Concept_Mastery", "Concept", "Definitions, assumptions, and curriculum rules"],
-  ["Calculation", "Calculation", "Formula application and numerical derivation"],
-  ["Sensitivity_Analysis", "Sensitivity", "Risk factor and market transmission"],
-  ["Case_Study", "Case", "Institutional multi-variable scenarios"],
-  ["Risk_Management", "Risk", "Capital, controls, hedging, and compliance"],
-  ["Reverse_Engineering", "Reverse", "Solve backward from target metrics"],
+  ["Concept_Mastery", "Concepts", "Definitions, assumptions and curriculum rules"],
+  ["Calculation", "Calculations", "Formula selection and numerical work"],
+  ["Sensitivity_Analysis", "Sensitivity", "Risk-factor and market transmission"],
+  ["Case_Study", "Cases", "Multi-variable professional scenarios"],
+  ["Risk_Management", "Risk practice", "Capital, controls, hedging and compliance"],
+  ["Reverse_Engineering", "Reverse problems", "Working back from target metrics"],
 ] as const;
 
-const THEMES: { key: ThemeKey; name: string; tone: string; swatch: string }[] = [
-  { key: "nexus", name: "Nexus Dark", tone: "cinematic", swatch: "linear-gradient(135deg,#03070b,#22d3ee,#34d399)" },
-  { key: "mist", name: "Focus Mist", tone: "eye comfort", swatch: "linear-gradient(135deg,#eef7f3,#8dd4c8,#2f8f9d)" },
-  { key: "terminal", name: "Graphite Mint", tone: "low glare", swatch: "linear-gradient(135deg,#101820,#1f8a70,#d8f3dc)" },
-  { key: "paper", name: "Analyst Light", tone: "clean desk", swatch: "linear-gradient(135deg,#f7fafc,#dbeafe,#38bdf8)" },
-  { key: "amber", name: "Warm Focus", tone: "long study", swatch: "linear-gradient(135deg,#17130c,#f6d78b,#22c55e)" },
-];
+const PRACTICE_FORMATS = [
+  ["Logic-Based Item Set (Modified Data)", "Exam-style item set"],
+  ["Calculative Focus (Formula Logic)", "Calculation practice"],
+  ["Conceptual Drill Questions", "Concept review"],
+] as const;
 
 function levelLabel(level: string) {
   return level.replace("_", " ");
 }
 
-function sourceText(source: Source) {
-  if (source === "api") return "Live Engine";
-  if (source === "backup") return "Backup Engine";
-  return "Curated Sample";
+function sourceLabel(source: QuestionSource) {
+  if (source === "api") return "Kensworth question bank";
+  if (source === "backup") return "Reserve question bank";
+  return "Model paper";
 }
 
 function score(set: PracticeSet | null, answers: Record<string, number>) {
   if (!set?.questions.length) return { correct: 0, total: 0, percent: 0 };
-  const correct = set.questions.filter((q) => answers[q.id] === q.correctOptionIndex).length;
-  return { correct, total: set.questions.length, percent: Math.round((correct / set.questions.length) * 100) };
+  const correct = set.questions.filter((question) => answers[question.id] === question.correctOptionIndex).length;
+  return {
+    correct,
+    total: set.questions.length,
+    percent: Math.round((correct / set.questions.length) * 100),
+  };
 }
 
-function dimensionName(key?: string) {
-  return DIMENSIONS.find(([dimensionKey]) => dimensionKey === key)?.[1] || "Core";
+function dimensionLabel(key?: string) {
+  return DIMENSIONS.find(([dimensionKey]) => dimensionKey === key)?.[1] || "Core curriculum";
 }
 
-function skillBucket(text = "") {
+function topicBucket(text = "") {
   const lower = text.toLowerCase();
-  if (lower.includes("capm") || lower.includes("beta") || lower.includes("sml")) return "CAPM";
-  if (lower.includes("dcf") || lower.includes("fcff") || lower.includes("fcfe") || lower.includes("cash flow")) return "DCF";
+  if (lower.includes("capm") || lower.includes("beta") || lower.includes("sml")) return "Portfolio Management";
+  if (lower.includes("dcf") || lower.includes("fcff") || lower.includes("fcfe") || lower.includes("cash flow")) return "Equity Valuation";
   if (lower.includes("derivative") || lower.includes("option") || lower.includes("swap") || lower.includes("future")) return "Derivatives";
   if (lower.includes("fixed income") || lower.includes("bond") || lower.includes("duration") || lower.includes("convexity")) return "Fixed Income";
   if (lower.includes("var") || lower.includes("value at risk") || lower.includes("expected shortfall")) return "Market Risk";
-  if (lower.includes("dupont") || lower.includes("roe") || lower.includes("financial statement")) return "Financial Statements";
+  if (lower.includes("dupont") || lower.includes("roe") || lower.includes("financial statement")) return "Financial Reporting";
   if (lower.includes("cds") || lower.includes("credit")) return "Credit Risk";
-  return text.split(/[(:,-]/)[0]?.trim().slice(0, 30) || "Core Finance";
+  return text.split(/[(:,-]/)[0]?.trim().slice(0, 34) || "Foundational Finance";
 }
 
-function skillStatus(accuracy: number, attempted: number): SkillStatus {
-  if (!attempted) return "Baseline";
-  if (accuracy < 55) return "Weak";
-  if (accuracy < 75) return "Medium";
-  return "Strong";
+function standing(accuracy: number, attempted: number) {
+  if (!attempted) return "Not assessed";
+  if (accuracy < 55) return "Review required";
+  if (accuracy < 75) return "Developing";
+  return "Secure";
 }
 
-function statusClass(status: SkillStatus) {
-  if (status === "Strong") return "bg-emerald-100 text-emerald-800";
-  if (status === "Medium") return "bg-amber-100 text-amber-800";
-  if (status === "Weak") return "bg-red-100 text-red-800";
-  return "bg-slate-100 text-slate-500";
-}
-
-function qualityTone(value: number) {
-  if (value >= 80) return "text-emerald-300";
-  if (value >= 60) return "text-amber-300";
-  return "text-red-300";
-}
-
-function planName(plan?: string) {
-  if (!plan) return "Free";
-  return plan.charAt(0).toUpperCase() + plan.slice(1);
+function planLabel(plan?: string) {
+  if (!plan) return "Foundation";
+  return `${plan.charAt(0).toUpperCase()}${plan.slice(1)}`;
 }
 
 export default function App() {
@@ -142,17 +109,14 @@ export default function App() {
   const [count, setCount] = useState(3);
   const [dimension, setDimension] = useState("");
   const [activeSet, setActiveSet] = useState<PracticeSet | null>(null);
-  const [source, setSource] = useState<Source>("static");
+  const [source, setSource] = useState<QuestionSource>("static");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [graded, setGraded] = useState(false);
   const [saved, setSaved] = useState<SavedPractice[]>([]);
-  const [panel, setPanel] = useState<Panel>("diagnosis");
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("practice");
   const [historySearch, setHistorySearch] = useState("");
-  const [theme, setTheme] = useState<ThemeKey>("nexus");
-  const [workspaceSize, setWorkspaceSize] = useState<WorkspaceSize>("wide");
-  const [readingSize, setReadingSize] = useState<ReadingSize>("large");
   const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState<BillingProfile | null>(null);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
@@ -164,34 +128,34 @@ export default function App() {
 
   const activeLevel = examType === ExamType.CFA ? cfaLevel : frmPart;
   const result = score(activeSet, answers);
-  const answered = activeSet ? activeSet.questions.filter((q) => answers[q.id] !== undefined).length : 0;
+  const answered = activeSet?.questions.filter((question) => answers[question.id] !== undefined).length || 0;
   const completed = useMemo(() => saved.filter((item) => item.isCompleted), [saved]);
 
   useEffect(() => {
     const initial = STATIC_SAMPLE_PRACTICES["CFA_Level_1_CAPM (Capital Asset Pricing Model)"];
     if (initial) setActiveSet(initial);
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setSaved(JSON.parse(raw));
-      const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeKey | null;
-      const storedWorkspace = localStorage.getItem(WORKSPACE_STORAGE_KEY) as WorkspaceSize | null;
-      const storedReading = localStorage.getItem(READING_STORAGE_KEY) as ReadingSize | null;
-      if (storedTheme && THEMES.some((item) => item.key === storedTheme)) setTheme(storedTheme);
-      if (storedWorkspace && ["balanced", "wide", "focus"].includes(storedWorkspace)) setWorkspaceSize(storedWorkspace);
-      if (storedReading && ["standard", "large", "xl"].includes(storedReading)) setReadingSize(storedReading);
+      const current = localStorage.getItem(STORAGE_KEY);
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      const raw = current || legacy;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setSaved(parsed);
+        if (!current) localStorage.setItem(STORAGE_KEY, raw);
+      }
     } catch {
       setSaved([]);
     }
   }, []);
 
   useEffect(() => {
-    const savedSession = loadSession();
-    if (!savedSession) {
+    const storedSession = loadSession();
+    if (!storedSession) {
       fetchProfile(null).then(setProfile).catch(() => undefined);
       return;
     }
-    setSession(savedSession);
-    fetchProfile(savedSession)
+    setSession(storedSession);
+    fetchProfile(storedSession)
       .then(setProfile)
       .catch(() => {
         saveSession(null);
@@ -201,21 +165,48 @@ export default function App() {
 
   const refreshProfile = async (nextSession = session) => {
     try {
-      const nextProfile = await fetchProfile(nextSession);
-      setProfile(nextProfile);
+      setProfile(await fetchProfile(nextSession));
     } catch {
-      // Keep the study flow responsive even if profile refresh fails.
+      // Practice remains available if the account summary is temporarily unavailable.
     }
+  };
+
+  const persist = (items: SavedPractice[]) => {
+    setSaved(items);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  };
+
+  const resetAssignment = () => {
+    setAnswers({});
+    setGraded(false);
+    setError("");
+  };
+
+  const loadSampleFor = (type: ExamType, level: string) => {
+    const sample = SAMPLE_TOPICS.find((item) => item.examType === type && item.level === level);
+    if (!sample) return;
+    setConceptInput(sample.concept);
+    const set = STATIC_SAMPLE_PRACTICES[`${sample.examType}_${sample.level}_${sample.label}`];
+    if (set) {
+      setActiveSet(set);
+      setSource("static");
+      resetAssignment();
+    }
+  };
+
+  const changeExam = (next: ExamType) => {
+    setExamType(next);
+    loadSampleFor(next, next === ExamType.CFA ? cfaLevel : frmPart);
   };
 
   const submitAuth = async () => {
     setAuthError("");
     if (!hasClientAuthConfig()) {
-      setAuthError("Supabase public settings are not configured yet.");
+      setAuthError("Candidate accounts are not yet enabled in this environment. You may use preview access instead.");
       return;
     }
     if (!authEmail || authPassword.length < 6) {
-      setAuthError("Enter an email and a password with at least 6 characters.");
+      setAuthError("Enter an email address and a password of at least six characters.");
       return;
     }
     setAuthLoading(true);
@@ -226,8 +217,8 @@ export default function App() {
       setGuestMode(false);
       await refreshProfile(nextSession);
       setAuthPassword("");
-    } catch (err: any) {
-      setAuthError(err?.message || "Authentication failed.");
+    } catch (authFailure: any) {
+      setAuthError(authFailure?.message || "We could not open your candidate account.");
     } finally {
       setAuthLoading(false);
     }
@@ -242,58 +233,15 @@ export default function App() {
     fetchProfile(null).then(setProfile).catch(() => undefined);
   };
 
-  const changeTheme = (next: ThemeKey) => {
-    setTheme(next);
-    localStorage.setItem(THEME_STORAGE_KEY, next);
-  };
-
-  const changeWorkspaceSize = (next: WorkspaceSize) => {
-    setWorkspaceSize(next);
-    localStorage.setItem(WORKSPACE_STORAGE_KEY, next);
-  };
-
-  const changeReadingSize = (next: ReadingSize) => {
-    setReadingSize(next);
-    localStorage.setItem(READING_STORAGE_KEY, next);
-  };
-
-  const persist = (items: SavedPractice[]) => {
-    setSaved(items);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  };
-
-  const resetWork = () => {
-    setAnswers({});
-    setGraded(false);
-    setError("");
-  };
-
-  const loadSampleFor = (type: ExamType, level: string) => {
-    const sample = SAMPLE_TOPICS.find((item) => item.examType === type && item.level === level);
-    if (!sample) return;
-    setConceptInput(sample.concept);
-    const set = STATIC_SAMPLE_PRACTICES[`${sample.examType}_${sample.level}_${sample.label}`];
-    if (set) {
-      setActiveSet(set);
-      setSource("static");
-      resetWork();
-    }
-  };
-
-  const changeExam = (next: ExamType) => {
-    setExamType(next);
-    loadSampleFor(next, next === ExamType.CFA ? cfaLevel : frmPart);
-  };
-
   const generate = async (overrideConcept?: string, overrideDimension?: string, overrideCount?: number) => {
     const concept = (overrideConcept || conceptInput).trim();
     const targetDimension = overrideDimension ?? dimension;
     if (!concept) {
-      setError("Please enter a CFA or FRM curriculum concept first.");
+      setError("Enter a curriculum topic before preparing a practice set.");
       return;
     }
     setLoading(true);
-    resetWork();
+    resetAssignment();
     try {
       const response = await fetch("/api/generate-questions", {
         method: "POST",
@@ -311,10 +259,10 @@ export default function App() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Generation request failed.");
-      if (!Array.isArray(data.questions)) throw new Error("The API did not return a valid question list.");
+      if (!response.ok) throw new Error(data.error || "The question bank could not prepare this set.");
+      if (!Array.isArray(data.questions)) throw new Error("The question bank returned an incomplete set.");
       const set: PracticeSet = {
-        id: `generated_${Date.now()}`,
+        id: `prepared_${Date.now()}`,
         examType,
         subLevel: levelLabel(activeLevel),
         conceptInput: concept,
@@ -324,10 +272,21 @@ export default function App() {
       };
       setActiveSet(set);
       setSource(data.source === "local-backup" ? "backup" : "api");
-      persist([{ id: `saved_${Date.now()}`, practiceSet: set, userAnswers: {}, score: 0, isCompleted: false, savedAt: new Date().toLocaleString() }, ...saved]);
+      persist([
+        {
+          id: `saved_${Date.now()}`,
+          practiceSet: set,
+          userAnswers: {},
+          score: 0,
+          isCompleted: false,
+          savedAt: new Date().toLocaleString(),
+        },
+        ...saved,
+      ]);
+      setWorkspaceView("practice");
       refreshProfile();
-    } catch (err: any) {
-      setError(err?.message || "Unable to generate questions. Please try again.");
+    } catch (requestError: any) {
+      setError(requestError?.message || "The practice set could not be prepared. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -357,133 +316,9 @@ export default function App() {
   const grade = () => {
     if (!activeSet) return;
     const missing = activeSet.questions.length - answered;
-    if (missing && !confirm(`You have ${missing} unanswered question(s). Submit anyway?`)) return;
+    if (missing && !confirm(`You have ${missing} unanswered question${missing > 1 ? "s" : ""}. Submit this assignment?`)) return;
     setGraded(true);
     setTimeout(() => saveCurrent(true), 0);
-  };
-
-  const startTargetedDrill = (concept: string, targetDimension?: string) => {
-    setConceptInput(concept);
-    if (targetDimension) setDimension(targetDimension);
-    setMode("Conceptual Drill Questions");
-    setCount(3);
-    generate(concept, targetDimension, 3);
-  };
-
-  const exportSet = () => {
-    if (!activeSet) return;
-    const lines = [`HarborQuant ${activeSet.examType} ${activeSet.subLevel}`, `Concept: ${activeSet.conceptInput}`, ""];
-    activeSet.questions.forEach((q, index) => {
-      lines.push(`Q${index + 1}. ${q.text}`);
-      q.options.forEach((option, optionIndex) => lines.push(`${String.fromCharCode(65 + optionIndex)}. ${option}`));
-      if (graded) lines.push(`Correct: ${String.fromCharCode(65 + q.correctOptionIndex)}`, q.stepByStepSolution, q.knowledgeAnalysis, q.examLogicInsight);
-      lines.push("");
-    });
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `HarborQuant_${activeSet.examType}_${activeSet.subLevel}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const stats = useMemo(() => {
-    return DIMENSIONS.map(([key, name, prompt]) => {
-      let attempted = 0;
-      let correct = 0;
-      completed.forEach((practice) => {
-        practice.practiceSet.questions.forEach((question) => {
-          if ((question.dimension || "Concept_Mastery") !== key || practice.userAnswers?.[question.id] === undefined) return;
-          attempted += 1;
-          if (practice.userAnswers[question.id] === question.correctOptionIndex) correct += 1;
-        });
-      });
-      return { key, name, prompt, attempted, accuracy: attempted ? Math.round((correct / attempted) * 100) : 0 };
-    });
-  }, [completed]);
-
-  const intelligence = useMemo(() => {
-    let totalQuestions = 0;
-    let totalCorrect = 0;
-    const gaps = new Map<string, { point: string; dimension: string; misses: number }>();
-    completed.forEach((practice) => {
-      practice.practiceSet.questions.forEach((question) => {
-        if (practice.userAnswers?.[question.id] === undefined) return;
-        totalQuestions += 1;
-        const correct = practice.userAnswers[question.id] === question.correctOptionIndex;
-        if (correct) {
-          totalCorrect += 1;
-          return;
-        }
-        const point = question.pointsTested || practice.practiceSet.conceptInput;
-        const key = `${question.dimension || "Concept_Mastery"}:${point}`;
-        const current = gaps.get(key);
-        gaps.set(key, { point, dimension: question.dimension || "Concept_Mastery", misses: (current?.misses || 0) + 1 });
-      });
-    });
-    const accuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-    const coverage = Math.min(100, Math.round((totalQuestions / 120) * 100));
-    const readiness = totalQuestions ? Math.min(99, Math.round(accuracy * 0.72 + coverage * 0.28)) : 0;
-    const weakDimension = stats.filter((item) => item.attempted > 0).sort((a, b) => a.accuracy - b.accuracy)[0];
-    const topGaps = Array.from(gaps.values()).sort((a, b) => b.misses - a.misses).slice(0, 5);
-    const readinessLabel = readiness >= 82 ? "Exam Ready" : readiness >= 62 ? "Acceleration" : totalQuestions ? "Repair Mode" : "Baseline";
-    return { totalQuestions, totalCorrect, accuracy, coverage, readiness, readinessLabel, weakDimension, topGaps };
-  }, [completed, stats]);
-
-  const skillMap = useMemo(() => {
-    const seed = ["CAPM", "DCF", "Fixed Income", "Derivatives", "Market Risk", "Financial Statements"];
-    const map = new Map<string, { name: string; attempted: number; correct: number }>();
-    seed.forEach((name) => map.set(name, { name, attempted: 0, correct: 0 }));
-    completed.forEach((practice) => {
-      practice.practiceSet.questions.forEach((question) => {
-        if (practice.userAnswers?.[question.id] === undefined) return;
-        const name = skillBucket(`${question.pointsTested} ${practice.practiceSet.conceptInput}`);
-        const row = map.get(name) || { name, attempted: 0, correct: 0 };
-        row.attempted += 1;
-        if (practice.userAnswers[question.id] === question.correctOptionIndex) row.correct += 1;
-        map.set(name, row);
-      });
-    });
-    return Array.from(map.values())
-      .map((item) => {
-        const accuracy = item.attempted ? Math.round((item.correct / item.attempted) * 100) : 0;
-        return { ...item, accuracy, status: skillStatus(accuracy, item.attempted) };
-      })
-      .sort((a, b) => (a.attempted && !b.attempted ? -1 : !a.attempted && b.attempted ? 1 : a.accuracy - b.accuracy))
-      .slice(0, 7);
-  }, [completed]);
-
-  const learningBrain = useMemo(() => {
-    const weakSkill = skillMap.find((skill) => skill.attempted > 0 && skill.accuracy < 75);
-    const baselineSkill = skillMap.find((skill) => skill.attempted === 0);
-    const topGap = intelligence.topGaps[0];
-    const focus = topGap ? skillBucket(topGap.point) : weakSkill?.name || baselineSkill?.name || "CAPM";
-    const focusConcept = topGap?.point || `${focus} core exam logic`;
-    const focusDimension = topGap?.dimension || intelligence.weakDimension?.key || "Concept_Mastery";
-    const difficulty = !intelligence.totalQuestions || (weakSkill && weakSkill.accuracy < 55) ? "Easy" : intelligence.readiness >= 75 ? "Hard" : "Medium";
-    const action = topGap ? "错题强化" : weakSkill ? "弱项修复" : !intelligence.totalQuestions ? "建立基线" : "提高难度";
-    const prompt = `Generate 1 ${focus} question. Difficulty: ${difficulty}. Dimension: ${dimensionName(focusDimension)}.`;
-    return { focus, focusConcept, focusDimension, difficulty, action, prompt };
-  }, [intelligence, skillMap]);
-
-  const adaptiveFlow = useMemo(() => {
-    const hasBaseline = intelligence.totalQuestions > 0;
-    const hasWeakness = intelligence.topGaps.length > 0 || !!intelligence.weakDimension;
-    return [
-      { label: `${learningBrain.focus} foundation`, state: hasBaseline ? "done" : "active" },
-      { label: "Wrong-answer repair", state: hasWeakness ? "active" : "locked" },
-      { label: "Raise difficulty", state: intelligence.accuracy >= 65 && hasBaseline ? "active" : "locked" },
-      { label: "Mixed exam simulation", state: intelligence.readiness >= 80 ? "active" : "locked" },
-    ];
-  }, [intelligence, learningBrain.focus]);
-
-  const dispatchBrainInstruction = () => {
-    setConceptInput(learningBrain.focusConcept);
-    setDimension(learningBrain.focusDimension);
-    setMode(learningBrain.difficulty === "Hard" ? "Logic-Based Item Set (Modified Data)" : "Conceptual Drill Questions");
-    setCount(1);
-    generate(learningBrain.focusConcept, learningBrain.focusDimension, 1);
   };
 
   const selectSample = (sample: (typeof SAMPLE_TOPICS)[number]) => {
@@ -495,697 +330,618 @@ export default function App() {
     if (set) {
       setActiveSet(set);
       setSource("static");
-      resetWork();
+      resetAssignment();
+      setWorkspaceView("practice");
     } else {
       generate(sample.concept);
     }
   };
 
-  const history = saved.filter((entry) => {
+  const exportSet = () => {
+    if (!activeSet) return;
+    const lines = [
+      "Kensworth Institute of Finance",
+      `${activeSet.examType} ${activeSet.subLevel} practice set`,
+      `Topic: ${activeSet.conceptInput}`,
+      "",
+    ];
+    activeSet.questions.forEach((question, index) => {
+      lines.push(`Question ${index + 1}. ${question.text}`);
+      question.options.forEach((option, optionIndex) => lines.push(`${String.fromCharCode(65 + optionIndex)}. ${option}`));
+      if (graded) {
+        lines.push(
+          `Correct response: ${String.fromCharCode(65 + question.correctOptionIndex)}`,
+          question.stepByStepSolution,
+          question.knowledgeAnalysis,
+          question.examLogicInsight,
+        );
+      }
+      lines.push("");
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Kensworth_${activeSet.examType}_${activeSet.subLevel}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const dimensionStats = useMemo(() => {
+    return DIMENSIONS.map(([key, name, description]) => {
+      let attempted = 0;
+      let correct = 0;
+      completed.forEach((practice) => {
+        practice.practiceSet.questions.forEach((question) => {
+          if ((question.dimension || "Concept_Mastery") !== key || practice.userAnswers?.[question.id] === undefined) return;
+          attempted += 1;
+          if (practice.userAnswers[question.id] === question.correctOptionIndex) correct += 1;
+        });
+      });
+      return { key, name, description, attempted, accuracy: attempted ? Math.round((correct / attempted) * 100) : 0 };
+    });
+  }, [completed]);
+
+  const record = useMemo(() => {
+    let totalQuestions = 0;
+    let totalCorrect = 0;
+    const gaps = new Map<string, { point: string; dimension: string; misses: number }>();
+    completed.forEach((practice) => {
+      practice.practiceSet.questions.forEach((question) => {
+        if (practice.userAnswers?.[question.id] === undefined) return;
+        totalQuestions += 1;
+        const correct = practice.userAnswers[question.id] === question.correctOptionIndex;
+        if (correct) {
+          totalCorrect += 1;
+        } else {
+          const point = question.pointsTested || practice.practiceSet.conceptInput;
+          const key = `${question.dimension || "Concept_Mastery"}:${point}`;
+          const current = gaps.get(key);
+          gaps.set(key, {
+            point,
+            dimension: question.dimension || "Concept_Mastery",
+            misses: (current?.misses || 0) + 1,
+          });
+        }
+      });
+    });
+    const accuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    const coverage = Math.min(100, Math.round((totalQuestions / 120) * 100));
+    const topGaps = Array.from(gaps.values()).sort((a, b) => b.misses - a.misses).slice(0, 5);
+    const weakestDimension = dimensionStats.filter((item) => item.attempted > 0).sort((a, b) => a.accuracy - b.accuracy)[0];
+    return { totalQuestions, totalCorrect, accuracy, coverage, topGaps, weakestDimension };
+  }, [completed, dimensionStats]);
+
+  const subjectRecord = useMemo(() => {
+    const subjectMap = new Map<string, { name: string; attempted: number; correct: number }>();
+    ["Portfolio Management", "Equity Valuation", "Fixed Income", "Derivatives", "Market Risk", "Financial Reporting"].forEach((name) => {
+      subjectMap.set(name, { name, attempted: 0, correct: 0 });
+    });
+    completed.forEach((practice) => {
+      practice.practiceSet.questions.forEach((question) => {
+        if (practice.userAnswers?.[question.id] === undefined) return;
+        const name = topicBucket(`${question.pointsTested} ${practice.practiceSet.conceptInput}`);
+        const item = subjectMap.get(name) || { name, attempted: 0, correct: 0 };
+        item.attempted += 1;
+        if (practice.userAnswers[question.id] === question.correctOptionIndex) item.correct += 1;
+        subjectMap.set(name, item);
+      });
+    });
+    return Array.from(subjectMap.values())
+      .map((item) => {
+        const accuracy = item.attempted ? Math.round((item.correct / item.attempted) * 100) : 0;
+        return { ...item, accuracy, standing: standing(accuracy, item.attempted) };
+      })
+      .sort((a, b) => (a.attempted && !b.attempted ? -1 : !a.attempted && b.attempted ? 1 : a.accuracy - b.accuracy));
+  }, [completed]);
+
+  const recommendation = useMemo(() => {
+    const weakSubject = subjectRecord.find((subject) => subject.attempted > 0 && subject.accuracy < 75);
+    const unassessed = subjectRecord.find((subject) => subject.attempted === 0);
+    const gap = record.topGaps[0];
+    const subject = gap ? topicBucket(gap.point) : weakSubject?.name || unassessed?.name || "Portfolio Management";
+    const concept = gap?.point || `${subject} core examination principles`;
+    const focusDimension = gap?.dimension || record.weakestDimension?.key || "Concept_Mastery";
+    return {
+      subject,
+      concept,
+      focusDimension,
+      note: gap
+        ? `Return to ${gap.point}. This point has appeared more than once in your incorrect responses.`
+        : weakSubject
+          ? `Complete a short review set in ${weakSubject.name} before moving to a mixed paper.`
+          : record.totalQuestions
+            ? "Your next useful step is to broaden curriculum coverage with a new subject area."
+            : "Begin with a short model paper to establish your first learning record.",
+    };
+  }, [record, subjectRecord]);
+
+  const beginRecommendation = () => {
+    setConceptInput(recommendation.concept);
+    setDimension(recommendation.focusDimension);
+    setMode("Conceptual Drill Questions");
+    setCount(3);
+    generate(recommendation.concept, recommendation.focusDimension, 3);
+  };
+
+  const filteredHistory = saved.filter((entry) => {
     const query = historySearch.toLowerCase();
     return !query || `${entry.practiceSet.examType} ${entry.practiceSet.subLevel} ${entry.practiceSet.conceptInput}`.toLowerCase().includes(query);
   });
-  const launchpads = SAMPLE_TOPICS.filter((topic) => topic.examType === examType && topic.level === activeLevel);
-  const activeTheme = THEMES.find((item) => item.key === theme) || THEMES[0];
-  const shellWidthClass = workspaceSize === "balanced" ? "max-w-[1500px]" : workspaceSize === "wide" ? "max-w-[1760px]" : "max-w-[1840px]";
-  const mainGridClass = workspaceSize === "focus" ? "xl:grid-cols-[330px_minmax(0,1fr)]" : workspaceSize === "wide" ? "xl:grid-cols-[350px_minmax(0,1fr)]" : "xl:grid-cols-[390px_minmax(0,1fr)]";
-  const workspaceGridClass = "grid gap-6";
-  const questionTextClass = readingSize === "standard" ? "text-base leading-7" : readingSize === "large" ? "text-lg leading-8" : "text-xl leading-9";
-  const optionTextClass = readingSize === "standard" ? "text-sm" : readingSize === "large" ? "text-base" : "text-lg";
-  const articlePaddingClass = readingSize === "xl" ? "p-8" : readingSize === "large" ? "p-7" : "p-6";
-  const creditPercent = profile?.monthly_credit_limit ? Math.min(100, Math.round(((profile.credits_remaining || 0) / profile.monthly_credit_limit) * 100)) : 0;
-  const readinessDegrees = Math.max(8, intelligence.readiness) * 3.6;
+
+  const launchTopics = SAMPLE_TOPICS.filter((topic) => topic.examType === examType && topic.level === activeLevel);
   const canEnterWorkspace = Boolean(session) || guestMode;
 
   if (!canEnterWorkspace) {
     return (
-      <div data-theme="nexus" className="app-shell min-h-screen overflow-x-hidden bg-[#f6f8fb] text-slate-950">
-        <div className="fixed inset-x-0 top-0 -z-10 h-[560px] bg-[linear-gradient(135deg,#06111f_0%,#0b2734_44%,#0e3b36_72%,#f6f8fb_72%)]" />
-        <div className="fixed inset-x-0 top-0 -z-10 h-[560px] opacity-[0.16] [background-image:linear-gradient(#67e8f9_1px,transparent_1px),linear-gradient(90deg,#67e8f9_1px,transparent_1px)] [background-size:54px_54px]" />
-        <div className="fixed right-0 top-0 -z-10 h-[520px] w-[52vw] bg-[radial-gradient(circle_at_68%_24%,rgba(103,232,249,.34),transparent_34%),radial-gradient(circle_at_82%_54%,rgba(110,231,183,.22),transparent_30%)]" />
-
-        <div className="mx-auto flex min-h-screen max-w-[1480px] flex-col px-5 py-5 sm:px-7">
-          <nav className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.08] px-4 py-3 text-white shadow-[0_18px_70px_rgba(0,0,0,.16)] backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-md border border-cyan-200/40 bg-white/10 text-base font-black text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,.22)]">H/Q</div>
-              <div>
-                <div className="text-base font-black text-white">HarborQuant</div>
-                <div className="text-[10px] font-black uppercase tracking-normal text-cyan-100/70">CFA and FRM candidate portal</div>
-              </div>
-            </div>
-            <div className="hidden items-center gap-7 lg:flex">
-              {["Diagnostic Engine", "Skill Map", "Study Plans", "Mock Readiness"].map((item) => <span key={item} className="text-[11px] font-black uppercase tracking-normal text-cyan-100/72">{item}</span>)}
-            </div>
-            <div className="hidden items-center gap-2 rounded-md border border-cyan-200/25 bg-cyan-200/10 px-3 py-2 text-xs font-black text-cyan-100 sm:flex">
-              <ShieldCheck className="h-4 w-4" />
-              Secure Access
-            </div>
-          </nav>
-
-          <div className="grid flex-1 gap-7 py-7 lg:grid-cols-[minmax(0,1fr)_430px] xl:grid-cols-[minmax(0,1.08fr)_465px]">
-            <section className="min-w-0 pt-8 text-white lg:pt-12">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase text-cyan-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,.8)]" />
-                Built for finance exam candidates
-              </div>
-              <h1 className="mt-6 max-w-5xl text-5xl font-black leading-[1.02] tracking-normal text-white lg:text-7xl">Prepare for CFA and FRM with a measurable study system.</h1>
-              <p className="mt-6 max-w-3xl text-lg font-semibold leading-8 text-slate-200">HarborQuant combines diagnostic practice, weak-point repair, and adaptive exam sets so candidates can see exactly what to study next.</p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <button onClick={() => setAuthMode("signup")} className="rounded-md bg-[linear-gradient(90deg,#67e8f9,#6ee7b7)] px-5 py-3 text-sm font-black uppercase text-slate-950 shadow-[0_18px_46px_rgba(103,232,249,.22)]">Start Free Diagnostic</button>
-                <button onClick={() => setGuestMode(true)} className="rounded-md border border-white/20 bg-white/10 px-5 py-3 text-sm font-black uppercase text-white backdrop-blur">Explore Demo</button>
-              </div>
-
-              <div className="mt-8 grid max-w-4xl gap-3 md:grid-cols-3">
-                {[
-                  ["Diagnostic credits", "20 Q", "free account"],
-                  ["Skill coverage", "34 topics", "CFA and FRM"],
-                  ["Study flow", "4 stages", "diagnose to mock"],
-                ].map(([label, value, note]) => (
-                  <div key={label} className="rounded-lg border border-white/14 bg-white/[0.09] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.10)] backdrop-blur">
-                    <div className="text-[10px] font-black uppercase tracking-normal text-cyan-100/65">{label}</div>
-                    <div className="mt-2 text-3xl font-black text-white">{value}</div>
-                    <div className="mt-1 text-[11px] font-bold uppercase text-cyan-200">{note}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-10 overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-950 shadow-[0_30px_90px_rgba(15,23,42,.18)]">
-                <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-normal text-slate-500">Readiness report preview</p>
-                    <h2 className="mt-1 text-xl font-black text-slate-950">Candidate performance dashboard</h2>
-                  </div>
-                  <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-700">Live path</span>
-                </div>
-                <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_280px]">
-                  <div>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {[
-                        ["Questions", "128", "+36 this week"],
-                        ["Accuracy", "76%", "rising"],
-                        ["Weak topics", "5", "repair queued"],
-                      ].map(([label, value, note]) => (
-                        <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                          <div className="text-[9px] font-black uppercase tracking-normal text-slate-500">{label}</div>
-                          <div className="mt-2 text-2xl font-black text-slate-950">{value}</div>
-                          <div className="mt-1 text-[10px] font-bold uppercase text-cyan-700">{note}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-5 space-y-3">
-                      {[
-                        ["CAPM", "45%", "Repair now", "bg-red-400"],
-                        ["Derivatives", "62%", "Build confidence", "bg-amber-400"],
-                        ["Fixed Income", "84%", "Maintain", "bg-emerald-400"],
-                      ].map(([topic, score, label, color]) => (
-                        <div key={topic} className="rounded-md border border-slate-200 p-3">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-sm font-black text-slate-950">{topic}</span>
-                            <span className="text-xs font-black text-slate-500">{score}</span>
-                          </div>
-                          <div className="mt-2 h-2 rounded-full bg-slate-100">
-                            <div className={`h-full rounded-full ${color}`} style={{ width: score }} />
-                          </div>
-                          <div className="mt-2 text-[10px] font-black uppercase tracking-normal text-slate-500">{label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-cyan-200 bg-[linear-gradient(180deg,#ecfeff,#ffffff)] p-4">
-                    <p className="text-[10px] font-black uppercase tracking-normal text-cyan-700">Next recommended block</p>
-                    <h3 className="mt-2 text-2xl font-black leading-tight text-slate-950">CAPM repair set</h3>
-                    <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">Focused practice on required return, beta interpretation, and inflation-adjusted assumptions.</p>
-                    <div className="mt-5 space-y-2">
-                      {["Concept check", "Formula drill", "Mixed scenario"].map((item, index) => (
-                        <div key={item} className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm">
-                          <span className="grid h-5 w-5 place-items-center rounded bg-cyan-100 text-[10px] text-cyan-700">{index + 1}</span>
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <aside className="self-start rounded-lg border border-slate-200 bg-white p-6 text-slate-950 shadow-[0_30px_90px_rgba(15,23,42,.22)] lg:sticky lg:top-6 lg:mt-10">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-normal text-cyan-700">Candidate account</p>
-                  <h2 className="mt-2 text-3xl font-black text-slate-950">{authMode === "signup" ? "Create your study workspace" : "Sign in to HarborQuant"}</h2>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{authMode === "signup" ? "Begin with free diagnostic credits and a personal skill map." : "Continue your saved question history and readiness path."}</p>
-                </div>
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-slate-950 text-cyan-200">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-slate-100 p-1">
-                <button onClick={() => setAuthMode("signup")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signup" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:bg-white"}`}><UserPlus className="mr-2 inline h-4 w-4" />Create</button>
-                <button onClick={() => setAuthMode("signin")} className={`rounded-md px-3 py-3 text-xs font-black uppercase ${authMode === "signin" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:bg-white"}`}><KeyRound className="mr-2 inline h-4 w-4" />Sign in</button>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-normal text-slate-500">Email</span>
-                  <span className="flex items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 focus-within:border-cyan-500 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,.12)]">
-                    <Mail className="h-4 w-4 text-cyan-600" />
-                    <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@domain.com" className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400" />
-                  </span>
-                </label>
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-normal text-slate-500">Password</span>
-                  <span className="flex items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 focus-within:border-cyan-500 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,.12)]">
-                    <KeyRound className="h-4 w-4 text-emerald-600" />
-                    <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="minimum 6 characters" type="password" className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400" />
-                  </span>
-                </label>
-                <button onClick={submitAuth} disabled={authLoading} className="flex w-full items-center justify-center gap-2 rounded-md bg-[linear-gradient(90deg,#0f172a,#0e7490)] px-4 py-3.5 text-sm font-black uppercase text-white shadow-[0_16px_40px_rgba(15,23,42,.22)] hover:translate-y-[-1px] disabled:translate-y-0 disabled:bg-slate-500">
-                  {authLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  {authLoading ? "Securing..." : authMode === "signup" ? "Start Free Diagnostic" : "Enter Workspace"}
-                </button>
-                <button onClick={() => setGuestMode(true)} className="w-full rounded-md border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black uppercase text-cyan-800 hover:bg-cyan-100">Preview Demo Workspace</button>
-              </div>
-
-              {authError && <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{authError}</div>}
-              {!hasClientAuthConfig() && <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">Auth is in dev mode until Supabase env vars are added.</div>}
-
-              <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-black uppercase tracking-normal text-slate-500">What your account stores</span>
-                  <span className="rounded bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700">Personalized</span>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {[
-                    ["Credits", "20 Q"],
-                    ["Skill Map", "Live"],
-                    ["History", "Saved"],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-md border border-slate-200 bg-white p-3">
-                      <div className="text-[9px] font-black uppercase tracking-normal text-slate-500">{label}</div>
-                      <div className="mt-1 text-xs font-black text-slate-950">{value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-2 border-t border-slate-200 pt-5">
-                {[
-                  "Adaptive question sets for CFA and FRM",
-                  "Weak-topic tracking by concept",
-                  "Progress saved after login",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </aside>
-          </div>
-
-          <div className="grid gap-4 pb-7 md:grid-cols-3">
-            {[
-              ["For CFA candidates", "Level I to Level III practice paths with formula, concept, and case dimensions."],
-              ["For FRM candidates", "Risk, valuation, market structure, and quantitative repair loops."],
-              ["For long study cycles", "A clear dashboard keeps daily progress, weak points, and next steps visible."],
-            ].map(([title, note]) => (
-              <div key={title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_16px_44px_rgba(15,23,42,.08)]">
-                <div className="mb-3 grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-cyan-200">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <h3 className="text-base font-black text-slate-950">{title}</h3>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{note}</p>
-              </div>
-            ))}
+      <div className="institution-shell">
+        <div className="utility-bar">
+          <div className="page-width utility-inner">
+            <span>Professional examination preparation</span>
+            <span className="utility-separator">Independent · Online · Candidate-led</span>
           </div>
         </div>
+
+        <header className="public-header page-width">
+          <a className="wordmark" href="#top" aria-label="Kensworth Institute of Finance home">
+            <span className="wordmark-name">KENSWORTH</span>
+            <span className="wordmark-subtitle">Institute of Finance</span>
+          </a>
+          <nav className="public-nav" aria-label="Main navigation">
+            <a href="#programmes">Programmes</a>
+            <a href="#method">Our Method</a>
+            <a href="#candidate-access">Candidate Access</a>
+          </nav>
+        </header>
+
+        <main id="top">
+          <section className="hero-section">
+            <div className="page-width hero-grid">
+              <div className="hero-copy">
+                <p className="eyebrow">2026 examination preparation</p>
+                <h1>Serious preparation for demanding finance examinations.</h1>
+                <p className="hero-intro">
+                  Structured CFA and FRM practice built around curriculum coverage, careful reasoning and disciplined review—not shortcuts.
+                </p>
+                <div className="hero-actions">
+                  <button className="button button-primary" onClick={() => setGuestMode(true)}>
+                    Enter programme preview <ArrowRight aria-hidden="true" />
+                  </button>
+                  <a className="text-link" href="#candidate-access">Create a candidate account</a>
+                </div>
+                <div className="academic-note">
+                  <span className="academic-rule" />
+                  <p>Independent preparation for professional finance candidates. Progress is measured through completed work, not time spent online.</p>
+                </div>
+              </div>
+
+              <aside className="programme-card" id="programmes">
+                <p className="folio">Programme directory · 2026</p>
+                <h2>Professional Qualifications</h2>
+                <div className="programme-list">
+                  <button onClick={() => { setExamType(ExamType.CFA); setGuestMode(true); }}>
+                    <span><strong>CFA Programme</strong><small>Levels I, II and III</small></span>
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                  <button onClick={() => { setExamType(ExamType.FRM); setGuestMode(true); }}>
+                    <span><strong>FRM Programme</strong><small>Parts I and II</small></span>
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                </div>
+                <dl className="programme-facts">
+                  <div><dt>Study format</dt><dd>Question-led review</dd></div>
+                  <div><dt>Assessment</dt><dd>Immediate rationale</dd></div>
+                  <div><dt>Record</dt><dd>Subject-by-subject</dd></div>
+                </dl>
+                <p className="programme-footnote">Programme preview includes model assignments and an on-device learning record.</p>
+              </aside>
+            </div>
+          </section>
+
+          <section className="method-section" id="method">
+            <div className="page-width">
+              <div className="section-heading">
+                <p className="eyebrow">The Kensworth method</p>
+                <h2>A measured route from curriculum knowledge to exam judgment.</h2>
+              </div>
+              <div className="method-grid">
+                {[
+                  ["01", "Establish", "Begin with a focused assignment in the subject you intend to study."],
+                  ["02", "Review", "Read the full rationale and identify where your reasoning diverged."],
+                  ["03", "Consolidate", "Return to weak principles with shorter, deliberate practice."],
+                  ["04", "Integrate", "Progress to mixed questions only when the underlying subject is secure."],
+                ].map(([number, title, text]) => (
+                  <article key={number} className="method-item">
+                    <span>{number}</span>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="access-section" id="candidate-access">
+            <div className="page-width access-grid">
+              <div className="access-copy">
+                <p className="eyebrow">Candidate access</p>
+                <h2>Your work should form a record, not disappear into a feed.</h2>
+                <p>Open an account to retain completed assignments, subject standing and recommended next work across study sessions.</p>
+                <ul>
+                  <li><Check aria-hidden="true" /> Saved question sets and responses</li>
+                  <li><Check aria-hidden="true" /> Topic and assessment-method record</li>
+                  <li><Check aria-hidden="true" /> A clear next-study recommendation</li>
+                </ul>
+              </div>
+
+              <div className="access-form-card">
+                <div className="access-tabs" role="tablist" aria-label="Candidate account">
+                  <button className={authMode === "signup" ? "active" : ""} onClick={() => setAuthMode("signup")}>
+                    <UserPlus aria-hidden="true" /> New candidate
+                  </button>
+                  <button className={authMode === "signin" ? "active" : ""} onClick={() => setAuthMode("signin")}>
+                    <LogIn aria-hidden="true" /> Sign in
+                  </button>
+                </div>
+                <div className="access-form-heading">
+                  <p className="folio">Candidate portal</p>
+                  <h3>{authMode === "signup" ? "Create your study record" : "Continue your programme"}</h3>
+                </div>
+                <label className="field-label">
+                  <span>Email address</span>
+                  <div className="field-with-icon"><Mail aria-hidden="true" /><input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@domain.com" type="email" /></div>
+                </label>
+                <label className="field-label">
+                  <span>Password</span>
+                  <div className="field-with-icon"><KeyRound aria-hidden="true" /><input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="Minimum 6 characters" type="password" /></div>
+                </label>
+                {authError && <div className="form-message error"><CircleAlert aria-hidden="true" />{authError}</div>}
+                <button className="button button-primary button-full" onClick={submitAuth} disabled={authLoading}>
+                  {authLoading ? <Loader2 className="spin" aria-hidden="true" /> : null}
+                  {authMode === "signup" ? "Create candidate account" : "Open candidate portal"}
+                </button>
+                <button className="button button-secondary button-full" onClick={() => setGuestMode(true)}>Use programme preview</button>
+                {!hasClientAuthConfig() && <p className="form-footnote">Account registration is currently in preview. Programme access remains available.</p>}
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer className="public-footer">
+          <div className="page-width footer-grid">
+            <div className="wordmark footer-wordmark">
+              <span className="wordmark-name">KENSWORTH</span>
+              <span className="wordmark-subtitle">Institute of Finance</span>
+            </div>
+            <p>Kensworth Institute of Finance is an independent examination-preparation provider and is not affiliated with CFA Institute or GARP.</p>
+          </div>
+        </footer>
       </div>
     );
   }
 
   return (
-    <div data-theme={theme} className="app-shell min-h-screen bg-[#03070b] text-slate-100">
-      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#03070b,#06131f_38%,#071713_68%,#120f05)]" />
-      <div className="fixed inset-0 -z-10 opacity-[0.16] [background-image:linear-gradient(#22d3ee_1px,transparent_1px),linear-gradient(90deg,#34d399_1px,transparent_1px)] [background-size:48px_48px]" />
-      <div className="fixed inset-x-0 top-0 -z-10 h-40 bg-[linear-gradient(180deg,rgba(34,211,238,.18),transparent)]" />
+    <div className="portal-shell">
+      <div className="utility-bar">
+        <div className="page-width utility-inner">
+          <span>Candidate Portal · 2026 Programme</span>
+          <span className="utility-separator">{session ? `${planLabel(profile?.plan)} plan` : "Programme preview"}</span>
+        </div>
+      </div>
 
-      <header className="border-b border-cyan-300/20 bg-black/55 backdrop-blur-xl shadow-[0_18px_80px_rgba(34,211,238,.10)]">
-        <div className={`mx-auto flex ${shellWidthClass} flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between`}>
-          <div className="flex items-center gap-4">
-            <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-cyan-300/40 bg-[linear-gradient(135deg,rgba(34,211,238,.25),rgba(52,211,153,.10),rgba(251,191,36,.18))] text-xl font-black text-cyan-100 shadow-[0_0_42px_rgba(34,211,238,0.34)]">
-              <span className="absolute inset-x-0 top-0 h-px bg-cyan-200" />
-              H/Q
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase text-cyan-200 ring-1 ring-cyan-300/30">Quant Nexus</span>
-                <h1 className="text-2xl font-black text-white">HarborQuant Nexus</h1>
-              </div>
-              <p className="mt-1 text-sm font-medium text-slate-400">CFA and FRM adaptive exam intelligence console</p>
-            </div>
-          </div>
-          <div className="grid gap-3 lg:grid-cols-[minmax(430px,560px)_auto] lg:items-stretch">
-            <div className="relative overflow-hidden rounded-lg border border-cyan-300/25 bg-[linear-gradient(135deg,rgba(2,6,23,.92),rgba(8,47,73,.62),rgba(6,78,59,.38))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_18px_60px_rgba(34,211,238,.12)]">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(103,232,249,.9),rgba(110,231,183,.75),transparent)]" />
-              <div className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl" />
-              {session ? (
-                <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-200"><ShieldCheck className="h-3.5 w-3.5" />Verified Access</span>
-                      <span className="inline-flex items-center gap-1.5 rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200"><Crown className="h-3.5 w-3.5" />{planName(profile?.plan)} Plan</span>
-                    </div>
-                    <div className="mt-3 truncate text-base font-black text-white">{profile?.email || session.email}</div>
-                    <div className="mt-3 max-w-sm">
-                      <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
-                        <span>Question Credits</span>
-                        <span className="text-cyan-200">{profile?.credits_remaining ?? "--"} / {profile?.monthly_credit_limit ?? "--"}</span>
-                      </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                        <div className="h-full rounded-full bg-[linear-gradient(90deg,#22d3ee,#34d399,#facc15)]" style={{ width: `${Math.max(creditPercent, profile ? 4 : 0)}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={signOut} className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[11px] font-black uppercase text-slate-300 hover:border-cyan-300/30 hover:bg-cyan-300/10">Sign out</button>
-                </div>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-100"><Sparkles className="h-3.5 w-3.5" />Demo Session</span>
-                      <span className="inline-flex items-center gap-1.5 rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-200"><ShieldCheck className="h-3.5 w-3.5" />Workspace Preview</span>
-                    </div>
-                    <div className="mt-3 text-base font-black text-white">Explore HarborQuant before creating an account.</div>
-                    <p className="mt-2 max-w-xl text-xs font-semibold leading-5 text-slate-400">Use curated sample sets, inspect the dashboard, and test the adaptive flow. Create an account later to save progress and use credits.</p>
-                  </div>
-                  <button onClick={() => setGuestMode(false)} className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[11px] font-black uppercase text-slate-300 hover:border-cyan-300/30 hover:bg-cyan-300/10">Back to login</button>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                ["Readiness", `${intelligence.readiness}%`, Gauge],
-                ["Answered", String(intelligence.totalQuestions), Activity],
-                ["Engine", sourceText(source), ShieldCheck],
-              ].map(([label, value, Icon]: any) => (
-                <div key={label} className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,.09),rgba(34,211,238,.08))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5 text-cyan-300" />{label}</div>
-                  <div className="mt-1 text-sm font-black text-white">{value}</div>
-                </div>
-              ))}
-            </div>
+      <header className="portal-header">
+        <div className="page-width portal-header-inner">
+          <button className="wordmark wordmark-button" onClick={() => setWorkspaceView("practice")} aria-label="Return to practice desk">
+            <span className="wordmark-name">KENSWORTH</span>
+            <span className="wordmark-subtitle">Institute of Finance</span>
+          </button>
+          <nav className="portal-nav" aria-label="Candidate portal sections">
+            <button className={workspaceView === "practice" ? "active" : ""} onClick={() => setWorkspaceView("practice")}>Practice desk</button>
+            <button className={workspaceView === "record" ? "active" : ""} onClick={() => setWorkspaceView("record")}>Learning record</button>
+            <button className={workspaceView === "history" ? "active" : ""} onClick={() => setWorkspaceView("history")}>Saved work</button>
+          </nav>
+          <div className="candidate-menu">
+            <span>{session ? profile?.email || session.email : "Preview candidate"}</span>
+            <button onClick={session ? signOut : () => setGuestMode(false)}>
+              <LogOut aria-hidden="true" /> {session ? "Sign out" : "Leave preview"}
+            </button>
           </div>
         </div>
       </header>
 
-      <main className={`mx-auto grid ${shellWidthClass} items-start gap-5 px-5 py-5 ${mainGridClass}`}>
-        <aside className="space-y-5 xl:sticky xl:top-5 xl:max-h-[calc(100vh-40px)] xl:overflow-y-auto xl:pr-1">
-          <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-xl">
-            <div className="mb-4 flex items-center justify-between">
+      {workspaceView === "practice" && (
+        <main className="page-width portal-layout">
+          <aside className="practice-desk">
+            <div className="panel-heading">
+              <p className="folio">Practice desk</p>
+              <h1>Prepare an assignment</h1>
+              <p>Choose a programme, curriculum point and assessment format.</p>
+            </div>
+
+            <fieldset className="segmented-fieldset">
+              <legend>Programme</legend>
               <div>
-                <p className="text-[10px] font-black uppercase text-cyan-200">Mission Control</p>
-                <h2 className="mt-1 text-lg font-black text-white">Exam Generator</h2>
+                <button className={examType === ExamType.CFA ? "active" : ""} onClick={() => changeExam(ExamType.CFA)}>CFA</button>
+                <button className={examType === ExamType.FRM ? "active" : ""} onClick={() => changeExam(ExamType.FRM)}>FRM</button>
               </div>
-              <Sparkles className="h-5 w-5 text-amber-300" />
-            </div>
-            <div className="grid grid-cols-2 gap-2 rounded-lg border border-white/10 bg-black/20 p-1">
-              <button onClick={() => changeExam(ExamType.CFA)} className={`rounded-md px-3 py-2 text-sm font-black ${examType === ExamType.CFA ? "bg-cyan-300 text-slate-950" : "text-slate-400 hover:bg-white/5"}`}><Award className="mr-2 inline h-4 w-4" />CFA</button>
-              <button onClick={() => changeExam(ExamType.FRM)} className={`rounded-md px-3 py-2 text-sm font-black ${examType === ExamType.FRM ? "bg-emerald-300 text-slate-950" : "text-slate-400 hover:bg-white/5"}`}><Layers3 className="mr-2 inline h-4 w-4" />FRM</button>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {examType === ExamType.CFA
-                ? (["Level_1", "Level_2", "Level_3"] as CFALevel[]).map((level) => (
-                    <button key={level} onClick={() => { setCfaLevel(level); loadSampleFor(ExamType.CFA, level); }} className={`rounded-md border px-3 py-2 text-xs font-black ${cfaLevel === level ? "border-cyan-300 bg-cyan-300/15 text-cyan-100" : "border-white/10 text-slate-400"}`}>{levelLabel(level)}</button>
-                  ))
-                : (["Part_1", "Part_2"] as FRMPart[]).map((part) => (
-                    <button key={part} onClick={() => { setFrmPart(part); loadSampleFor(ExamType.FRM, part); }} className={`rounded-md border px-3 py-2 text-xs font-black ${frmPart === part ? "border-emerald-300 bg-emerald-300/15 text-emerald-100" : "border-white/10 text-slate-400"}`}>{levelLabel(part)}</button>
-                  ))}
-            </div>
-            <label className="mt-5 block text-[11px] font-black uppercase text-slate-400">Exam point</label>
-            <textarea value={conceptInput} onChange={(event) => setConceptInput(event.target.value)} className="mt-2 h-28 w-full resize-none rounded-lg border border-white/10 bg-black/30 p-3 text-sm font-medium text-slate-100 outline-none focus:border-cyan-300" />
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <select value={mode} onChange={(event) => setMode(event.target.value)} className="rounded-lg border border-white/10 bg-[#0b1718] p-2.5 text-xs font-bold">
-                <option value="Logic-Based Item Set (Modified Data)">Exam Logic</option>
-                <option value="Calculative Focus (Formula Logic)">Formula Drill</option>
-                <option value="Conceptual Drill Questions">Concept Drill</option>
+            </fieldset>
+
+            <fieldset className="level-fieldset">
+              <legend>Programme stage</legend>
+              <div>
+                {examType === ExamType.CFA
+                  ? (["Level_1", "Level_2", "Level_3"] as CFALevel[]).map((level) => (
+                      <button key={level} className={cfaLevel === level ? "active" : ""} onClick={() => { setCfaLevel(level); loadSampleFor(ExamType.CFA, level); }}>{levelLabel(level)}</button>
+                    ))
+                  : (["Part_1", "Part_2"] as FRMPart[]).map((part) => (
+                      <button key={part} className={frmPart === part ? "active" : ""} onClick={() => { setFrmPart(part); loadSampleFor(ExamType.FRM, part); }}>{levelLabel(part)}</button>
+                    ))}
+              </div>
+            </fieldset>
+
+            <label className="field-label">
+              <span>Curriculum point</span>
+              <textarea value={conceptInput} onChange={(event) => setConceptInput(event.target.value)} rows={5} />
+            </label>
+
+            <label className="field-label">
+              <span>Assessment format</span>
+              <select value={mode} onChange={(event) => setMode(event.target.value)}>
+                {PRACTICE_FORMATS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
-              <select value={count} onChange={(event) => setCount(Number(event.target.value))} className="rounded-lg border border-white/10 bg-[#0b1718] p-2.5 text-xs font-bold">
-                <option value={1}>1 Question</option>
-                <option value={3}>3 Questions</option>
-                <option value={5}>5 Questions</option>
-              </select>
-            </div>
-            <select value={dimension} onChange={(event) => setDimension(event.target.value)} className="mt-3 w-full rounded-lg border border-white/10 bg-[#0b1718] p-2.5 text-xs font-bold">
-              <option value="">Balanced Mix</option>
-              {DIMENSIONS.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-            </select>
-            <button onClick={() => generate()} disabled={loading} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-3.5 text-sm font-black text-slate-950 shadow-[0_12px_36px_rgba(34,211,238,0.22)] hover:bg-cyan-200 disabled:bg-slate-600">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Generate Exam Set</button>
-          </section>
+            </label>
 
-          <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase text-cyan-200">Visual Console</p>
-                <h3 className="mt-1 text-base font-black text-white">Study Appearance</h3>
-              </div>
-              <Palette className="h-5 w-5 text-cyan-300" />
+            <div className="two-field-grid">
+              <label className="field-label">
+                <span>Questions</span>
+                <select value={count} onChange={(event) => setCount(Number(event.target.value))}>
+                  <option value={1}>1</option>
+                  <option value={3}>3</option>
+                  <option value={5}>5</option>
+                </select>
+              </label>
+              <label className="field-label">
+                <span>Primary focus</span>
+                <select value={dimension} onChange={(event) => setDimension(event.target.value)}>
+                  <option value="">Balanced</option>
+                  {DIMENSIONS.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+                </select>
+              </label>
             </div>
-            <div className="grid gap-2">
-              {THEMES.map((item) => (
-                <button key={item.key} onClick={() => changeTheme(item.key)} className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left ${theme === item.key ? "border-cyan-300 bg-cyan-300/10" : "border-white/10 bg-black/20 hover:border-cyan-300/30"}`}>
-                  <span className="h-7 w-7 shrink-0 rounded-md border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,.24)]" style={{ background: item.swatch }} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-black text-slate-100">{item.name}</span>
-                    <span className="block text-[10px] font-black uppercase text-slate-500">{item.tone}</span>
-                  </span>
-                  {theme === item.key && <CheckCircle2 className="h-4 w-4 text-cyan-300" />}
+
+            <button className="button button-primary button-full" onClick={() => generate()} disabled={loading}>
+              {loading ? <Loader2 className="spin" aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
+              Prepare practice set
+            </button>
+
+            <section className="curriculum-list">
+              <div className="curriculum-heading">
+                <span>Curriculum references</span>
+                <small>{launchTopics.length} available</small>
+              </div>
+              {launchTopics.length ? launchTopics.map((sample, index) => (
+                <button key={`${sample.label}-${index}`} onClick={() => selectSample(sample)}>
+                  <span>{sample.label}</span><ChevronRight aria-hidden="true" />
                 </button>
-              ))}
-            </div>
-            <div className="mt-4 rounded-lg border border-white/10 bg-black/20 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400"><Maximize2 className="h-3.5 w-3.5 text-cyan-300" />Workspace</span>
-                <span className="text-[10px] font-black uppercase text-cyan-200">{activeTheme.name}</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  ["balanced", "Balanced"],
-                  ["wide", "Wide"],
-                  ["focus", "Focus"],
-                ].map(([key, label]) => (
-                  <button key={key} onClick={() => changeWorkspaceSize(key as WorkspaceSize)} className={`rounded-md border px-2 py-2 text-[11px] font-black ${workspaceSize === key ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>{label}</button>
-                ))}
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {[
-                  ["standard", "Normal"],
-                  ["large", "Large"],
-                  ["xl", "XL"],
-                ].map(([key, label]) => (
-                  <button key={key} onClick={() => changeReadingSize(key as ReadingSize)} className={`rounded-md border px-2 py-2 text-[11px] font-black ${readingSize === key ? "border-emerald-300 bg-emerald-300 text-slate-950" : "border-white/10 text-slate-400 hover:bg-white/5"}`}>{label}</button>
-                ))}
-              </div>
-            </div>
-          </section>
+              )) : <p>No model paper is available for this stage yet. Enter a curriculum point above.</p>}
+            </section>
+          </aside>
 
-          <section className="rounded-lg border border-cyan-300/20 bg-slate-950/80 p-4 shadow-2xl shadow-cyan-950/20">
-            <div className="mb-3 flex items-center justify-between">
+          <section className="assignment-panel">
+            <header className="assignment-header">
               <div>
-                <p className="text-[10px] font-black uppercase text-cyan-200">Learning Brain</p>
-                <h3 className="mt-1 text-base font-black text-white">Quant Dispatch System</h3>
-              </div>
-              <BrainCircuit className="h-5 w-5 text-cyan-300" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ["Focus", learningBrain.focus],
-                ["Action", learningBrain.action],
-                ["Difficulty", learningBrain.difficulty],
-                ["Dimension", dimensionName(learningBrain.focusDimension)],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-md border border-white/10 bg-white/[0.06] px-3 py-2">
-                  <div className="text-[9px] font-black uppercase text-slate-500">{label}</div>
-                  <div className="mt-1 truncate text-xs font-black text-slate-100">{value}</div>
+                <div className="assignment-meta">
+                  <span>{activeSet ? `${activeSet.examType} ${levelLabel(activeSet.subLevel)}` : `${examType} ${levelLabel(activeLevel)}`}</span>
+                  <span>{sourceLabel(source)}</span>
+                  {activeSet?.targetDimension && <span>{dimensionLabel(activeSet.targetDimension)}</span>}
                 </div>
-              ))}
-            </div>
-            <div className="mt-3 rounded-lg border border-emerald-300/15 bg-emerald-300/[0.06] p-3">
-              <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase text-emerald-200"><Send className="h-3.5 w-3.5" />Question Generator Command</div>
-              <p className="text-xs font-bold leading-5 text-slate-300">{learningBrain.prompt}</p>
-            </div>
-            <button onClick={dispatchBrainInstruction} disabled={loading} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-300 px-4 py-3 text-xs font-black text-slate-950 hover:bg-emerald-200 disabled:bg-slate-600">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}Run Quant Signal</button>
-          </section>
-
-          <section className="rounded-lg border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-sm font-black text-white"><Flame className="h-4 w-4 text-amber-300" />High-Yield Launchpads</h3>
-              <span className="text-[10px] font-black uppercase text-slate-500">{launchpads.length} live</span>
-            </div>
-            <div className="space-y-2">
-              {launchpads.map((sample, index) => (
-                <button key={index} onClick={() => selectSample(sample)} className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-left text-xs font-bold text-slate-300 hover:border-cyan-300/40 hover:bg-cyan-300/10">
-                  <span className="truncate pr-3">{sample.label}</span>
-                  <ChevronRight className="h-4 w-4 text-cyan-300" />
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.06] backdrop-blur-xl">
-            <div className="grid grid-cols-2 border-b border-white/10 bg-black/20 p-1">
-              <button onClick={() => setPanel("diagnosis")} className={`rounded-md px-3 py-2 text-xs font-black ${panel === "diagnosis" ? "bg-emerald-300 text-slate-950" : "text-slate-400"}`}><Radar className="mr-2 inline h-4 w-4" />Diagnosis</button>
-              <button onClick={() => setPanel("history")} className={`rounded-md px-3 py-2 text-xs font-black ${panel === "history" ? "bg-cyan-300 text-slate-950" : "text-slate-400"}`}><History className="mr-2 inline h-4 w-4" />History</button>
-            </div>
-            {panel === "diagnosis" ? (
-              <div className="space-y-3 p-4">
-                {stats.map((item) => (
-                  <div key={item.key} className="rounded-lg border border-white/10 bg-black/20 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-xs font-black text-white">{item.name}</div>
-                        <div className="text-[10px] text-slate-500">{item.prompt}</div>
-                      </div>
-                      <div className="text-xs font-black text-cyan-200">{item.attempted ? `${item.accuracy}%` : "N/A"}</div>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded bg-white/10"><div className="h-full rounded bg-cyan-300" style={{ width: `${item.attempted ? item.accuracy : 8}%` }} /></div>
-                  </div>
-                ))}
+                <p className="folio">Current assignment</p>
+                <h2>{activeSet?.conceptInput || "Select a curriculum point to begin"}</h2>
+                {activeSet && <p className="assignment-date">Prepared {activeSet.generatedAt}</p>}
               </div>
-            ) : (
-              <div className="p-4">
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-                  <input value={historySearch} onChange={(event) => setHistorySearch(event.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 py-2 pl-9 pr-3 text-xs font-medium outline-none" placeholder="Search history" />
+              {activeSet && (
+                <div className="assignment-tools">
+                  <button onClick={exportSet}><Download aria-hidden="true" /> Export</button>
+                  <button onClick={() => saveCurrent()}><Bookmark aria-hidden="true" /> Save</button>
                 </div>
-                <div className="max-h-[320px] space-y-2 overflow-y-auto">
-                  {history.map((entry) => (
-                    <button key={entry.id} onClick={() => { setActiveSet(entry.practiceSet); setAnswers(entry.userAnswers || {}); setGraded(entry.isCompleted); setSource("api"); }} className="group w-full rounded-lg border border-white/10 bg-black/20 p-3 text-left hover:border-cyan-300/40">
-                      <div className="flex items-center justify-between">
-                        <span className="rounded bg-white/10 px-2 py-1 text-[10px] font-black text-cyan-100">{entry.practiceSet.examType} {entry.practiceSet.subLevel}</span>
-                        <span onClick={(event) => { event.stopPropagation(); persist(saved.filter((item) => item.id !== entry.id)); }} className="text-slate-500 opacity-0 group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></span>
-                      </div>
-                      <div className="mt-2 truncate text-xs font-black text-white">{entry.practiceSet.conceptInput}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-        </aside>
+              )}
+            </header>
 
-        <section className="exam-os self-start overflow-hidden rounded-lg border border-cyan-300/20 bg-[#061018] text-slate-100 shadow-[0_26px_90px_rgba(0,0,0,.55),0_0_42px_rgba(34,211,238,.10)] xl:sticky xl:top-5 xl:h-[calc(100vh-40px)]">
-          <div className="border-b border-cyan-300/15 bg-[linear-gradient(135deg,rgba(2,6,23,.96),rgba(8,24,34,.94),rgba(5,46,40,.70))] p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200 ring-1 ring-cyan-300/30">{activeSet ? `${activeSet.examType} ${activeSet.subLevel}` : `${examType} ${levelLabel(activeLevel)}`}</span>
-                  <span className="rounded border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-200">{sourceText(source)}</span>
-                  <span className="rounded border border-amber-300/25 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-amber-200">Adaptive Loop</span>
-                </div>
-                <h2 className="mt-3 max-w-4xl text-xl font-black text-white lg:text-2xl">{activeSet?.conceptInput || "Professional exam intelligence workspace"}</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  ["Answered", activeSet ? `${answered}/${activeSet.questions.length}` : "0/0", ClipboardCheck],
-                  ["Score", graded ? `${result.percent}%` : "Pending", BarChart3],
-                  ["Saved", String(saved.length), Database],
-                ].map(([label, value, Icon]: any) => (
-                  <div key={label} className="rounded-lg border border-cyan-300/15 bg-white/[0.06] px-3 py-2">
-                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-500"><Icon className="h-3.5 w-3.5 text-cyan-300" />{label}</div>
-                    <div className="mt-1 text-sm font-black text-white">{value}</div>
-                  </div>
-                ))}
-              </div>
+            <div className="assignment-summary">
+              <div><span>Questions</span><strong>{activeSet?.questions.length || 0}</strong></div>
+              <div><span>Answered</span><strong>{answered}</strong></div>
+              <div><span>Result</span><strong>{graded ? `${result.percent}%` : "—"}</strong></div>
             </div>
-            {activeSet && (
-              <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-cyan-300/15 pt-3">
-                <button onClick={exportSet} className="rounded-lg border border-cyan-300/20 bg-white/[0.06] px-3 py-2 text-xs font-black text-slate-200 hover:bg-cyan-300/10"><Download className="mr-2 inline h-4 w-4 text-cyan-300" />Export</button>
-                <button onClick={() => saveCurrent()} className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-black text-slate-950 shadow-[0_0_24px_rgba(34,211,238,.22)]"><Bookmark className="mr-2 inline h-4 w-4" />Save</button>
-              </div>
-            )}
-          </div>
 
-          <div className="overflow-y-auto p-5 lg:p-7 xl:h-[calc(100vh-210px)]">
-            <div className={workspaceGridClass}>
-              <div className="min-w-0">
-                {error && <div className="mb-5 rounded-lg border border-red-400/30 bg-red-950/40 p-4 text-sm font-bold text-red-100">{error}</div>}
-                {loading ? (
-                  <div className="grid gap-4">{[1, 2, 3].map((item) => <div key={item} className="h-48 animate-pulse rounded-lg border border-cyan-300/10 bg-white/[0.05]" />)}</div>
-                ) : activeSet ? (
-                  <div className="space-y-5">
-                    {graded && (
-                      <div className="rounded-lg border border-amber-300/20 bg-[linear-gradient(135deg,rgba(15,23,42,.98),rgba(34,21,5,.85))] p-5 text-white shadow-[0_0_30px_rgba(251,191,36,.12)]">
-                        <div className="flex items-center justify-between">
-                          <div><div className="text-xs font-black uppercase text-cyan-200"><Target className="mr-2 inline h-4 w-4" />Performance Board</div><div className="mt-2 text-2xl font-black">{result.correct} of {result.total} correct</div></div>
-                          <div className="text-5xl font-black text-amber-300">{result.percent}%</div>
-                        </div>
-                      </div>
-                    )}
-                    {activeSet.questions.map((question, index) => {
+            <div className="assignment-body">
+              {error && <div className="form-message error"><CircleAlert aria-hidden="true" />{error}</div>}
+              {loading ? (
+                <div className="paper-loading" aria-label="Preparing practice set">
+                  <Loader2 className="spin" aria-hidden="true" />
+                  <strong>Preparing your assignment</strong>
+                  <span>Reviewing the selected curriculum point and assessment format.</span>
+                </div>
+              ) : activeSet ? (
+                <>
+                  {graded && (
+                    <section className="result-notice">
+                      <div><p className="folio">Assignment result</p><h3>{result.correct} of {result.total} correct</h3></div>
+                      <strong>{result.percent}%</strong>
+                    </section>
+                  )}
+
+                  <div className="question-stack">
+                    {activeSet.questions.map((question, questionIndex) => {
                       const selected = answers[question.id];
                       const isCorrect = selected === question.correctOptionIndex;
                       return (
-                        <article key={question.id} className={`overflow-hidden rounded-lg border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.96))] ${articlePaddingClass} shadow-[0_16px_55px_rgba(0,0,0,.32)]`}>
-                          <div className="mb-4 flex items-center justify-between gap-3">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded bg-cyan-300 px-2.5 py-1 text-xs font-black text-slate-950 shadow-[0_0_18px_rgba(34,211,238,.22)]">Q{index + 1}</span>
-                              <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-cyan-200">{question.dimension || "Core"}</span>
-                              <span className="rounded border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase text-amber-200">{question.difficulty}</span>
+                        <article className="question-paper" key={question.id}>
+                          <div className="question-heading">
+                            <span>Question {questionIndex + 1}</span>
+                            <div>
+                              <small>{dimensionLabel(question.dimension)}</small>
+                              <small>{question.difficulty}</small>
+                              {graded && <small className={isCorrect ? "correct" : "review"}>{isCorrect ? "Correct" : "Review"}</small>}
                             </div>
-                            {graded && <span className={`text-xs font-black ${isCorrect ? "text-emerald-300" : "text-red-300"}`}>{isCorrect ? <CheckCircle2 className="mr-1 inline h-4 w-4" /> : <XCircle className="mr-1 inline h-4 w-4" />}{isCorrect ? "Correct" : "Review"}</span>}
                           </div>
-                          <p className={`whitespace-pre-line font-bold text-slate-100 ${questionTextClass}`}>{question.text}</p>
-                          <div className="mt-5 grid gap-3">
+                          <p className="question-text">{question.text}</p>
+                          <div className="option-list">
                             {question.options.map((option, optionIndex) => {
                               const picked = selected === optionIndex;
                               const correct = question.correctOptionIndex === optionIndex;
-                              let className = "border-white/10 bg-white/[0.04] text-slate-200 hover:border-cyan-300/35 hover:bg-cyan-300/[0.06]";
-                              if (!graded && picked) className = "border-cyan-300 bg-cyan-300/10 text-cyan-50 ring-2 ring-cyan-300/20";
-                              if (graded && correct) className = "border-emerald-300 bg-emerald-300/10 text-emerald-50 ring-2 ring-emerald-300/20";
-                              if (graded && picked && !correct) className = "border-red-300 bg-red-300/10 text-red-50 ring-2 ring-red-300/20";
-                              return <button key={optionIndex} disabled={graded} onClick={() => setAnswers({ ...answers, [question.id]: optionIndex })} className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left font-bold ${optionTextClass} ${className}`}><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-slate-950 text-xs font-black text-cyan-200 ring-1 ring-cyan-300/20">{String.fromCharCode(65 + optionIndex)}</span>{option}</button>;
+                              const optionState = !graded && picked ? "selected" : graded && correct ? "correct" : graded && picked && !correct ? "incorrect" : "";
+                              return (
+                                <button
+                                  key={optionIndex}
+                                  className={optionState}
+                                  disabled={graded}
+                                  onClick={() => setAnswers({ ...answers, [question.id]: optionIndex })}
+                                >
+                                  <span>{String.fromCharCode(65 + optionIndex)}</span>
+                                  <p>{option}</p>
+                                </button>
+                              );
                             })}
                           </div>
+
                           {graded && (
-                            <div className="mt-5 grid gap-3 border-t border-cyan-300/15 pt-5">
-                              <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.06] p-4"><h4 className="text-xs font-black uppercase text-cyan-200">Step-by-step solution</h4><p className="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-200">{question.stepByStepSolution}</p></div>
-                              <div className="grid gap-3 lg:grid-cols-2">
-                                <div className="rounded-lg border border-white/10 bg-white/[0.05] p-4"><h4 className="text-xs font-black uppercase text-slate-400">Knowledge analysis</h4><p className="mt-2 text-sm font-medium leading-6 text-slate-200">{question.knowledgeAnalysis}</p></div>
-                                <div className="rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-4"><h4 className="text-xs font-black uppercase text-amber-200">Examiner logic</h4><p className="mt-2 text-sm font-medium leading-6 text-slate-200">{question.examLogicInsight}</p></div>
+                            <div className="review-notes">
+                              <section>
+                                <h4>Worked rationale</h4>
+                                <p>{question.stepByStepSolution}</p>
+                              </section>
+                              <div className="review-note-grid">
+                                <section><h4>Curriculum note</h4><p>{question.knowledgeAnalysis}</p></section>
+                                <section><h4>Exam convention</h4><p>{question.examLogicInsight}</p></section>
                               </div>
                             </div>
                           )}
                         </article>
                       );
                     })}
-                    <div className="sticky bottom-0 rounded-lg border border-cyan-300/15 bg-slate-950/90 p-3 shadow-[0_0_34px_rgba(34,211,238,.12)] backdrop-blur">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="text-sm font-black text-slate-300">Progress {answered} / {activeSet.questions.length}</div>
-                        <div className="flex gap-2">
-                          {graded && <button onClick={() => { setAnswers({}); setGraded(false); }} className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-black text-slate-200"><RefreshCcw className="mr-2 inline h-4 w-4" />Reset</button>}
-                          {!graded && <button onClick={grade} className="rounded-lg bg-cyan-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[0_0_24px_rgba(34,211,238,.22)]"><ClipboardCheck className="mr-2 inline h-4 w-4" />Submit and Review</button>}
-                        </div>
-                      </div>
+                  </div>
+
+                  <div className="assignment-actions">
+                    <span>{answered} of {activeSet.questions.length} questions answered</span>
+                    <div>
+                      {graded && <button className="button button-secondary" onClick={() => { setAnswers({}); setGraded(false); }}><RefreshCw aria-hidden="true" /> Try again</button>}
+                      {!graded && <button className="button button-primary" onClick={grade}><ClipboardCheck aria-hidden="true" /> Submit assignment</button>}
                     </div>
-                    <section className="overflow-hidden rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(2,6,23,.98),rgba(8,24,34,.94),rgba(6,78,59,.35))] shadow-[0_24px_80px_rgba(0,0,0,.36),0_0_42px_rgba(34,211,238,.12)]">
-                      <div className="border-b border-cyan-300/15 p-5">
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                          <div>
-                            <p className="flex items-center gap-2 text-[10px] font-black uppercase text-cyan-200"><Network className="h-4 w-4" />Candidate Intelligence Dashboard</p>
-                            <h3 className="mt-2 text-2xl font-black text-white">Your exam readiness system</h3>
-                            <p className="mt-1 max-w-2xl text-sm font-bold text-slate-400">A clear view of readiness, accuracy, coverage, weak points, and the next adaptive step.</p>
-                          </div>
-                          <span className="w-fit rounded border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-[10px] font-black uppercase text-emerald-200">{intelligence.readinessLabel}</span>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-5 p-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-                        <div className="grid place-items-center rounded-lg border border-white/10 bg-black/25 p-5">
-                          <div className="relative grid h-64 w-64 place-items-center rounded-full shadow-[0_0_55px_rgba(34,211,238,.22)]" style={{ background: `conic-gradient(#22d3ee 0deg, #34d399 ${Math.max(16, readinessDegrees * 0.72)}deg, #facc15 ${readinessDegrees}deg, rgba(255,255,255,.09) ${readinessDegrees}deg 360deg)` }}>
-                            <div className="absolute inset-4 rounded-full bg-slate-950 shadow-[inset_0_0_38px_rgba(0,0,0,.75)]" />
-                            <div className="relative text-center">
-                              <div className="text-[10px] font-black uppercase text-slate-500">Readiness</div>
-                              <div className={`mt-1 text-6xl font-black ${qualityTone(intelligence.readiness)}`}>{intelligence.readiness}%</div>
-                              <div className="mt-1 text-xs font-black uppercase text-cyan-200">{intelligence.readinessLabel}</div>
-                            </div>
-                          </div>
-                          <div className="mt-5 grid w-full grid-cols-2 gap-3">
-                            <div className="rounded-md border border-white/10 bg-white/[0.05] p-3">
-                              <div className="text-[9px] font-black uppercase text-slate-500">Accuracy</div>
-                              <div className="mt-1 text-2xl font-black text-white">{intelligence.accuracy}%</div>
-                            </div>
-                            <div className="rounded-md border border-white/10 bg-white/[0.05] p-3">
-                              <div className="text-[9px] font-black uppercase text-slate-500">Coverage</div>
-                              <div className="mt-1 text-2xl font-black text-white">{intelligence.coverage}%</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-5">
-                          <div className="grid gap-3 md:grid-cols-4">
-                            {[
-                              ["Questions", intelligence.totalQuestions, ClipboardCheck],
-                              ["Correct", intelligence.totalCorrect, CheckCircle2],
-                              ["Saved Sets", completed.length, Database],
-                              ["Coverage", `${intelligence.coverage}%`, Radar],
-                            ].map(([label, value, Icon]: any) => (
-                              <div key={label} className="rounded-lg border border-white/10 bg-white/[0.05] p-4">
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500"><Icon className="h-4 w-4 text-cyan-300" />{label}</div>
-                                <div className="mt-2 text-2xl font-black text-white">{value}</div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
-                            <section className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                              <div className="mb-4 flex items-center justify-between">
-                                <h4 className="flex items-center gap-2 text-sm font-black uppercase text-slate-200"><Network className="h-4 w-4 text-cyan-300" />Skill Map</h4>
-                                <span className="text-[10px] font-black text-slate-500">{intelligence.coverage}% measured</span>
-                              </div>
-                              <div className="grid gap-3 md:grid-cols-2">
-                                {skillMap.map((item) => (
-                                  <div key={item.name} className="rounded-md border border-white/10 bg-black/20 p-3">
-                                    <div className="mb-2 flex items-center justify-between gap-3">
-                                      <span className="truncate text-xs font-black text-slate-100">{item.name}</span>
-                                      <span className={`rounded px-2 py-1 text-[9px] font-black ${statusClass(item.status)}`}>{item.status}</span>
-                                    </div>
-                                    <div className="h-2 overflow-hidden rounded bg-white/10">
-                                      <div className="h-full rounded bg-[linear-gradient(90deg,#22d3ee,#34d399)]" style={{ width: `${item.attempted ? item.accuracy : 4}%` }} />
-                                    </div>
-                                    <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>{item.attempted ? `${item.accuracy}% accuracy` : "not measured"}</span><span>{item.attempted} Q</span></div>
-                                  </div>
-                                ))}
-                              </div>
-                            </section>
-
-                            <div className="grid gap-5">
-                              <section className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-4">
-                                <div className="mb-3 flex items-center justify-between">
-                                  <h4 className="flex items-center gap-2 text-sm font-black text-white"><AlertTriangle className="h-4 w-4 text-amber-300" />Weakness Queue</h4>
-                                  <span className="rounded bg-amber-300/10 px-2 py-1 text-[10px] font-black text-amber-200">{intelligence.topGaps.length} gaps</span>
-                                </div>
-                                {intelligence.topGaps.length ? (
-                                  <div className="space-y-2">
-                                    {intelligence.topGaps.slice(0, 3).map((gap) => (
-                                      <div key={`${gap.dimension}-${gap.point}`} className="flex items-start justify-between gap-3 rounded-md border border-white/10 bg-black/20 p-3">
-                                        <div className="min-w-0"><p className="truncate text-xs font-black text-slate-100">{gap.point}</p><p className="mt-1 text-[10px] font-black uppercase text-slate-500">{dimensionName(gap.dimension)} · {gap.misses} miss{gap.misses > 1 ? "es" : ""}</p></div>
-                                        <button onClick={() => startTargetedDrill(gap.point, gap.dimension)} className="shrink-0 rounded-md bg-amber-300 px-2.5 py-1.5 text-[10px] font-black text-slate-950">Drill</button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="rounded-md border border-dashed border-white/15 bg-black/20 p-4 text-center text-xs font-bold text-slate-500">Submit a set to activate weak-point detection.</div>
-                                )}
-                              </section>
-
-                              <section className="rounded-lg border border-emerald-300/20 bg-emerald-300/[0.05] p-4">
-                                <div className="flex items-center gap-2 text-sm font-black text-emerald-200"><TrendingUp className="h-4 w-4" />Adaptive Flow</div>
-                                <div className="mt-3 grid gap-2">
-                                  {adaptiveFlow.map((step, index) => (
-                                    <div key={step.label} className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2">
-                                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-[10px] font-black ${step.state === "done" ? "bg-emerald-500 text-slate-950" : step.state === "active" ? "bg-cyan-300 text-slate-950" : "bg-white/10 text-slate-500"}`}>{index + 1}</span>
-                                      <div className="min-w-0 flex-1"><div className="truncate text-xs font-black text-slate-100">{step.label}</div><div className="text-[10px] font-black uppercase text-emerald-300">{step.state}</div></div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </section>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
                   </div>
-                ) : (
-                  <div className="grid min-h-[560px] place-items-center rounded-lg border border-dashed border-cyan-300/25 bg-white/[0.04] text-center">
-                    <div className="max-w-xl p-8"><BrainCircuit className="mx-auto h-12 w-12 text-cyan-300" /><h2 className="mt-5 text-2xl font-black text-white">Exam intelligence workspace ready</h2><p className="mt-3 text-sm font-medium text-slate-400">Select a CFA or FRM module, enter a curriculum point, and generate a professional practice set.</p></div>
-                  </div>
-                )}
-              </div>
+
+                  <section className="adviser-note">
+                    <p className="folio">Recommended next work</p>
+                    <div>
+                      <div><h3>{recommendation.subject}</h3><p>{recommendation.note}</p></div>
+                      <button className="text-link" onClick={beginRecommendation}>Begin recommended review <ArrowRight aria-hidden="true" /></button>
+                    </div>
+                  </section>
+                </>
+              ) : (
+                <div className="empty-assignment">
+                  <BookOpen aria-hidden="true" />
+                  <h3>Your practice desk is ready.</h3>
+                  <p>Choose a programme and curriculum point, then prepare an assignment.</p>
+                </div>
+              )}
             </div>
+          </section>
+        </main>
+      )}
+
+      {workspaceView === "record" && (
+        <main className="page-width record-page">
+          <header className="record-header">
+            <p className="eyebrow">Candidate learning record</p>
+            <h1>Completed work, organised for review.</h1>
+            <p>This record is based only on submitted assignments. Unfinished sets do not affect standing.</p>
+          </header>
+
+          <section className="record-summary">
+            <div><span>Questions assessed</span><strong>{record.totalQuestions}</strong><small>{completed.length} completed set{completed.length === 1 ? "" : "s"}</small></div>
+            <div><span>Correct responses</span><strong>{record.totalCorrect}</strong><small>{record.accuracy}% overall accuracy</small></div>
+            <div><span>Curriculum coverage</span><strong>{record.coverage}%</strong><small>Measured against a 120-question foundation</small></div>
+          </section>
+
+          <div className="record-grid">
+            <section className="record-card subject-table-card">
+              <div className="record-card-heading"><div><p className="folio">Subject record</p><h2>Curriculum standing</h2></div><span>{subjectRecord.filter((item) => item.attempted).length} assessed</span></div>
+              <div className="subject-table" role="table" aria-label="Subject record">
+                <div className="subject-row subject-row-head" role="row"><span>Subject</span><span>Standing</span><span>Questions</span><span>Accuracy</span></div>
+                {subjectRecord.map((item) => (
+                  <div className="subject-row" role="row" key={item.name}>
+                    <strong>{item.name}</strong>
+                    <span className={`standing ${item.standing.toLowerCase().replaceAll(" ", "-")}`}>{item.standing}</span>
+                    <span>{item.attempted}</span>
+                    <div className="accuracy-cell"><span>{item.attempted ? `${item.accuracy}%` : "—"}</span><i><b style={{ width: `${item.attempted ? item.accuracy : 0}%` }} /></i></div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <aside className="record-card adviser-card">
+              <p className="folio">Adviser’s note</p>
+              <h2>{recommendation.subject}</h2>
+              <p>{recommendation.note}</p>
+              <dl>
+                <div><dt>Suggested focus</dt><dd>{dimensionLabel(recommendation.focusDimension)}</dd></div>
+                <div><dt>Suggested length</dt><dd>3 questions</dd></div>
+                <div><dt>Study format</dt><dd>Focused review</dd></div>
+              </dl>
+              <button className="button button-primary button-full" onClick={beginRecommendation}>Begin recommended work <ArrowRight aria-hidden="true" /></button>
+            </aside>
           </div>
-        </section>
-      </main>
+
+          <section className="record-card method-record-card">
+            <div className="record-card-heading"><div><p className="folio">Assessment methods</p><h2>How your understanding has been tested</h2></div></div>
+            <div className="method-record-grid">
+              {dimensionStats.map((item) => (
+                <article key={item.key}>
+                  <div><h3>{item.name}</h3><strong>{item.attempted ? `${item.accuracy}%` : "—"}</strong></div>
+                  <p>{item.description}</p>
+                  <small>{item.attempted} question{item.attempted === 1 ? "" : "s"} assessed</small>
+                </article>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
+
+      {workspaceView === "history" && (
+        <main className="page-width history-page">
+          <header className="record-header history-header">
+            <p className="eyebrow">Saved work</p>
+            <h1>Your assignment archive.</h1>
+            <p>Reopen a submitted paper, continue an unfinished set or remove work you no longer need.</p>
+          </header>
+          <div className="history-search">
+            <Search aria-hidden="true" />
+            <input value={historySearch} onChange={(event) => setHistorySearch(event.target.value)} placeholder="Search by programme or curriculum point" aria-label="Search saved work" />
+          </div>
+          <section className="history-list">
+            {filteredHistory.length ? filteredHistory.map((entry) => (
+              <article key={entry.id}>
+                <button className="history-main" onClick={() => { setActiveSet(entry.practiceSet); setAnswers(entry.userAnswers || {}); setGraded(entry.isCompleted); setSource("api"); setWorkspaceView("practice"); }}>
+                  <div className="history-programme"><span>{entry.practiceSet.examType}</span><small>{levelLabel(entry.practiceSet.subLevel)}</small></div>
+                  <div className="history-title"><h2>{entry.practiceSet.conceptInput}</h2><p>Saved {entry.savedAt}</p></div>
+                  <div className="history-result"><span>{entry.isCompleted ? "Completed" : "In progress"}</span><strong>{entry.isCompleted ? `${entry.score}%` : "—"}</strong></div>
+                  <ChevronRight aria-hidden="true" />
+                </button>
+                <button className="history-delete" onClick={() => persist(saved.filter((item) => item.id !== entry.id))} aria-label={`Remove ${entry.practiceSet.conceptInput}`}><Trash2 aria-hidden="true" /></button>
+              </article>
+            )) : (
+              <div className="empty-history"><BookOpen aria-hidden="true" /><h2>No saved work found</h2><p>Prepared assignments will appear here.</p></div>
+            )}
+          </section>
+        </main>
+      )}
+
+      <footer className="portal-footer">
+        <div className="page-width">
+          <span>Kensworth Institute of Finance</span>
+          <p>Independent examination preparation. CFA and FRM are trademarks of their respective owners; no affiliation is implied.</p>
+        </div>
+      </footer>
     </div>
   );
 }
