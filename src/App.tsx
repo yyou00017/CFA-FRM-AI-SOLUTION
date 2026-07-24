@@ -30,6 +30,7 @@ import {
   signIn,
   signUp,
 } from "./saas";
+import { ProgrammePage } from "./ProgrammePage";
 
 type QuestionSource = "api" | "backup" | "static";
 type WorkspaceView = "practice" | "record" | "history";
@@ -76,16 +77,30 @@ function dimensionLabel(key?: string) {
   return DIMENSIONS.find(([dimensionKey]) => dimensionKey === key)?.[1] || "Core curriculum";
 }
 
-function topicBucket(text = "") {
+function programmeFromPath(pathname: string) {
+  if (pathname === "/cfa" || pathname.startsWith("/cfa/")) return ExamType.CFA;
+  if (pathname === "/frm" || pathname.startsWith("/frm/")) return ExamType.FRM;
+  return null;
+}
+
+function topicBucket(text = "", programme = ExamType.CFA) {
   const lower = text.toLowerCase();
+  if (lower.includes("ethic") || lower.includes("professional standard")) return "Ethics & Professional Standards";
+  if (lower.includes("quantitative") || lower.includes("regression") || lower.includes("probability") || lower.includes("time series")) {
+    return programme === ExamType.CFA ? "Quantitative Methods" : "Quantitative Analysis";
+  }
+  if (lower.includes("operational") || lower.includes("resilience")) return "Operational Risk";
+  if (lower.includes("liquidity") || lower.includes("treasury") || lower.includes("funding risk")) return "Liquidity and Treasury Risk";
   if (lower.includes("capm") || lower.includes("beta") || lower.includes("sml")) return "Portfolio Management";
   if (lower.includes("dcf") || lower.includes("fcff") || lower.includes("fcfe") || lower.includes("cash flow")) return "Equity Valuation";
-  if (lower.includes("derivative") || lower.includes("option") || lower.includes("swap") || lower.includes("future")) return "Derivatives";
+  if (lower.includes("derivative") || lower.includes("option") || lower.includes("swap") || lower.includes("future")) {
+    return programme === ExamType.FRM ? "Financial Markets and Products" : "Derivatives";
+  }
   if (lower.includes("fixed income") || lower.includes("bond") || lower.includes("duration") || lower.includes("convexity")) return "Fixed Income";
   if (lower.includes("var") || lower.includes("value at risk") || lower.includes("expected shortfall")) return "Market Risk";
-  if (lower.includes("dupont") || lower.includes("roe") || lower.includes("financial statement")) return "Financial Reporting";
+  if (lower.includes("dupont") || lower.includes("roe") || lower.includes("financial statement")) return "Financial Statement Analysis";
   if (lower.includes("cds") || lower.includes("credit")) return "Credit Risk";
-  return text.split(/[(:,-]/)[0]?.trim().slice(0, 34) || "Foundational Finance";
+  return text.split(/[(:,-]/)[0]?.trim().slice(0, 34) || (programme === ExamType.FRM ? "Foundations of Risk Management" : "Portfolio Management");
 }
 
 function standing(accuracy: number, attempted: number) {
@@ -101,10 +116,16 @@ function planLabel(plan?: string) {
 }
 
 export default function App() {
-  const [examType, setExamType] = useState<ExamType>(ExamType.CFA);
+  const initialProgramme = programmeFromPath(window.location.pathname);
+  const [publicProgramme, setPublicProgramme] = useState<ExamType | null>(initialProgramme);
+  const [examType, setExamType] = useState<ExamType>(initialProgramme || ExamType.CFA);
   const [cfaLevel, setCfaLevel] = useState<CFALevel>("Level_1");
   const [frmPart, setFrmPart] = useState<FRMPart>("Part_1");
-  const [conceptInput, setConceptInput] = useState("CAPM required rate of return with inflation adjustment");
+  const [conceptInput, setConceptInput] = useState(
+    initialProgramme === ExamType.FRM
+      ? "Scaling Value at Risk across time horizons and confidence levels"
+      : "CAPM required rate of return with inflation adjustment",
+  );
   const [mode, setMode] = useState("Logic-Based Item Set (Modified Data)");
   const [count, setCount] = useState(3);
   const [dimension, setDimension] = useState("");
@@ -129,10 +150,14 @@ export default function App() {
   const activeLevel = examType === ExamType.CFA ? cfaLevel : frmPart;
   const result = score(activeSet, answers);
   const answered = activeSet?.questions.filter((question) => answers[question.id] !== undefined).length || 0;
-  const completed = useMemo(() => saved.filter((item) => item.isCompleted), [saved]);
+  const programmeSaved = useMemo(() => saved.filter((item) => item.practiceSet.examType === examType), [saved, examType]);
+  const completed = useMemo(() => programmeSaved.filter((item) => item.isCompleted), [programmeSaved]);
 
   useEffect(() => {
-    const initial = STATIC_SAMPLE_PRACTICES["CFA_Level_1_CAPM (Capital Asset Pricing Model)"];
+    const initialKey = examType === ExamType.FRM
+      ? "FRM_Part_1_Value at Risk (VaR) Scaling"
+      : "CFA_Level_1_CAPM (Capital Asset Pricing Model)";
+    const initial = STATIC_SAMPLE_PRACTICES[initialKey];
     if (initial) setActiveSet(initial);
     try {
       const current = localStorage.getItem(STORAGE_KEY);
@@ -167,6 +192,21 @@ export default function App() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [guestMode, session]);
 
+  useEffect(() => {
+    const title = publicProgramme === ExamType.CFA
+      ? "CFA Preparation | Kensworth Institute of Finance"
+      : publicProgramme === ExamType.FRM
+        ? "FRM Preparation | Kensworth Institute of Finance"
+        : "Kensworth Institute of Finance | CFA & FRM Preparation";
+    const description = publicProgramme === ExamType.CFA
+      ? "A dedicated CFA preparation programme for Levels I, II and III."
+      : publicProgramme === ExamType.FRM
+        ? "A dedicated FRM preparation programme for Parts I and II."
+        : "Independent CFA and FRM examination preparation built around disciplined practice and review.";
+    document.title = title;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", description);
+  }, [publicProgramme]);
+
   const refreshProfile = async (nextSession = session) => {
     try {
       setProfile(await fetchProfile(nextSession));
@@ -198,9 +238,24 @@ export default function App() {
     }
   };
 
-  const changeExam = (next: ExamType) => {
-    setExamType(next);
-    loadSampleFor(next, next === ExamType.CFA ? cfaLevel : frmPart);
+  useEffect(() => {
+    const syncProgrammeFromLocation = () => {
+      const nextProgramme = programmeFromPath(window.location.pathname);
+      setPublicProgramme(nextProgramme);
+      if (nextProgramme) {
+        setExamType(nextProgramme);
+        loadSampleFor(nextProgramme, nextProgramme === ExamType.CFA ? "Level_1" : "Part_1");
+      }
+    };
+    window.addEventListener("popstate", syncProgrammeFromLocation);
+    return () => window.removeEventListener("popstate", syncProgrammeFromLocation);
+  }, []);
+
+  const enterProgramme = (programme: ExamType) => {
+    setExamType(programme);
+    loadSampleFor(programme, programme === ExamType.CFA ? cfaLevel : frmPart);
+    setWorkspaceView("practice");
+    setGuestMode(true);
   };
 
   const submitAuth = async () => {
@@ -418,13 +473,16 @@ export default function App() {
 
   const subjectRecord = useMemo(() => {
     const subjectMap = new Map<string, { name: string; attempted: number; correct: number }>();
-    ["Portfolio Management", "Equity Valuation", "Fixed Income", "Derivatives", "Market Risk", "Financial Reporting"].forEach((name) => {
+    const programmeSubjects = examType === ExamType.CFA
+      ? ["Ethics & Professional Standards", "Quantitative Methods", "Financial Statement Analysis", "Equity Valuation", "Fixed Income", "Derivatives", "Portfolio Management"]
+      : ["Foundations of Risk Management", "Quantitative Analysis", "Financial Markets and Products", "Valuation and Risk Models", "Market Risk", "Credit Risk", "Operational Risk", "Liquidity and Treasury Risk"];
+    programmeSubjects.forEach((name) => {
       subjectMap.set(name, { name, attempted: 0, correct: 0 });
     });
     completed.forEach((practice) => {
       practice.practiceSet.questions.forEach((question) => {
         if (practice.userAnswers?.[question.id] === undefined) return;
-        const name = topicBucket(`${question.pointsTested} ${practice.practiceSet.conceptInput}`);
+        const name = topicBucket(`${question.pointsTested} ${practice.practiceSet.conceptInput}`, examType);
         const item = subjectMap.get(name) || { name, attempted: 0, correct: 0 };
         item.attempted += 1;
         if (practice.userAnswers[question.id] === question.correctOptionIndex) item.correct += 1;
@@ -437,13 +495,15 @@ export default function App() {
         return { ...item, accuracy, standing: standing(accuracy, item.attempted) };
       })
       .sort((a, b) => (a.attempted && !b.attempted ? -1 : !a.attempted && b.attempted ? 1 : a.accuracy - b.accuracy));
-  }, [completed]);
+  }, [completed, examType]);
 
   const recommendation = useMemo(() => {
     const weakSubject = subjectRecord.find((subject) => subject.attempted > 0 && subject.accuracy < 75);
     const unassessed = subjectRecord.find((subject) => subject.attempted === 0);
     const gap = record.topGaps[0];
-    const subject = gap ? topicBucket(gap.point) : weakSubject?.name || unassessed?.name || "Portfolio Management";
+    const subject = gap
+      ? topicBucket(gap.point, examType)
+      : weakSubject?.name || unassessed?.name || (examType === ExamType.CFA ? "Portfolio Management" : "Foundations of Risk Management");
     const concept = gap?.point || `${subject} core examination principles`;
     const focusDimension = gap?.dimension || record.weakestDimension?.key || "Concept_Mastery";
     return {
@@ -458,7 +518,7 @@ export default function App() {
             ? "Your next useful step is to broaden curriculum coverage with a new subject area."
             : "Begin with a short model paper to establish your first learning record.",
     };
-  }, [record, subjectRecord]);
+  }, [record, subjectRecord, examType]);
 
   const beginRecommendation = () => {
     setConceptInput(recommendation.concept);
@@ -468,15 +528,58 @@ export default function App() {
     generate(recommendation.concept, recommendation.focusDimension, 3);
   };
 
-  const filteredHistory = saved.filter((entry) => {
+  const filteredHistory = programmeSaved.filter((entry) => {
     const query = historySearch.toLowerCase();
     return !query || `${entry.practiceSet.examType} ${entry.practiceSet.subLevel} ${entry.practiceSet.conceptInput}`.toLowerCase().includes(query);
   });
 
   const launchTopics = SAMPLE_TOPICS.filter((topic) => topic.examType === examType && topic.level === activeLevel);
   const canEnterWorkspace = Boolean(session) || guestMode;
+  const candidateAccessPanel = (programme?: ExamType) => (
+    <div className="access-form-card">
+      <div className="access-tabs" role="tablist" aria-label="Candidate account">
+        <button className={authMode === "signup" ? "active" : ""} onClick={() => setAuthMode("signup")}>
+          <UserPlus aria-hidden="true" /> New candidate
+        </button>
+        <button className={authMode === "signin" ? "active" : ""} onClick={() => setAuthMode("signin")}>
+          <LogIn aria-hidden="true" /> Sign in
+        </button>
+      </div>
+      <div className="access-form-heading">
+        <p className="folio">{programme ? `${programme} candidate portal` : "Candidate portal"}</p>
+        <h3>{authMode === "signup" ? "Create your study record" : "Continue your programme"}</h3>
+      </div>
+      <label className="field-label">
+        <span>Email address</span>
+        <div className="field-with-icon"><Mail aria-hidden="true" /><input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@domain.com" type="email" /></div>
+      </label>
+      <label className="field-label">
+        <span>Password</span>
+        <div className="field-with-icon"><KeyRound aria-hidden="true" /><input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="Minimum 6 characters" type="password" /></div>
+      </label>
+      {authError && <div className="form-message error"><CircleAlert aria-hidden="true" />{authError}</div>}
+      <button className="button button-primary button-full" onClick={submitAuth} disabled={authLoading}>
+        {authLoading ? <Loader2 className="spin" aria-hidden="true" /> : null}
+        {authMode === "signup" ? "Create candidate account" : "Open candidate portal"}
+      </button>
+      <button className="button button-secondary button-full" onClick={() => enterProgramme(programme || examType)}>
+        Use {programme ? `${programme} ` : ""}programme preview
+      </button>
+      {!hasClientAuthConfig() && <p className="form-footnote">Account registration is currently in preview. Programme access remains available.</p>}
+    </div>
+  );
 
   if (!canEnterWorkspace) {
+    if (publicProgramme) {
+      return (
+        <ProgrammePage
+          programme={publicProgramme}
+          onPreview={() => enterProgramme(publicProgramme)}
+          accessPanel={candidateAccessPanel(publicProgramme)}
+        />
+      );
+    }
+
     return (
       <div className="institution-shell">
         <div className="utility-bar">
@@ -492,7 +595,8 @@ export default function App() {
             <span className="wordmark-subtitle">Institute of Finance</span>
           </a>
           <nav className="public-nav" aria-label="Main navigation">
-            <a href="#programmes">Programmes</a>
+            <a href="/cfa">CFA Programme</a>
+            <a href="/frm">FRM Programme</a>
             <a href="#method">Our Method</a>
             <a href="#candidate-access">Candidate Access</a>
           </nav>
@@ -508,9 +612,9 @@ export default function App() {
                   Structured CFA and FRM practice built around curriculum coverage, careful reasoning and disciplined review—not shortcuts.
                 </p>
                 <div className="hero-actions">
-                  <button className="button button-primary" onClick={() => setGuestMode(true)}>
-                    Enter programme preview <ArrowRight aria-hidden="true" />
-                  </button>
+                  <a className="button button-primary" href="#programmes">
+                    Choose your programme <ArrowRight aria-hidden="true" />
+                  </a>
                   <a className="text-link" href="#candidate-access">Create a candidate account</a>
                 </div>
                 <div className="academic-note">
@@ -523,14 +627,14 @@ export default function App() {
                 <p className="folio">Programme directory · 2026</p>
                 <h2>Professional Qualifications</h2>
                 <div className="programme-list">
-                  <button onClick={() => { setExamType(ExamType.CFA); setGuestMode(true); }}>
+                  <a href="/cfa">
                     <span><strong>CFA Programme</strong><small>Levels I, II and III</small></span>
                     <ChevronRight aria-hidden="true" />
-                  </button>
-                  <button onClick={() => { setExamType(ExamType.FRM); setGuestMode(true); }}>
+                  </a>
+                  <a href="/frm">
                     <span><strong>FRM Programme</strong><small>Parts I and II</small></span>
                     <ChevronRight aria-hidden="true" />
-                  </button>
+                  </a>
                 </div>
                 <dl className="programme-facts">
                   <div><dt>Study format</dt><dd>Question-led review</dd></div>
@@ -578,35 +682,7 @@ export default function App() {
                 </ul>
               </div>
 
-              <div className="access-form-card">
-                <div className="access-tabs" role="tablist" aria-label="Candidate account">
-                  <button className={authMode === "signup" ? "active" : ""} onClick={() => setAuthMode("signup")}>
-                    <UserPlus aria-hidden="true" /> New candidate
-                  </button>
-                  <button className={authMode === "signin" ? "active" : ""} onClick={() => setAuthMode("signin")}>
-                    <LogIn aria-hidden="true" /> Sign in
-                  </button>
-                </div>
-                <div className="access-form-heading">
-                  <p className="folio">Candidate portal</p>
-                  <h3>{authMode === "signup" ? "Create your study record" : "Continue your programme"}</h3>
-                </div>
-                <label className="field-label">
-                  <span>Email address</span>
-                  <div className="field-with-icon"><Mail aria-hidden="true" /><input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@domain.com" type="email" /></div>
-                </label>
-                <label className="field-label">
-                  <span>Password</span>
-                  <div className="field-with-icon"><KeyRound aria-hidden="true" /><input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="Minimum 6 characters" type="password" /></div>
-                </label>
-                {authError && <div className="form-message error"><CircleAlert aria-hidden="true" />{authError}</div>}
-                <button className="button button-primary button-full" onClick={submitAuth} disabled={authLoading}>
-                  {authLoading ? <Loader2 className="spin" aria-hidden="true" /> : null}
-                  {authMode === "signup" ? "Create candidate account" : "Open candidate portal"}
-                </button>
-                <button className="button button-secondary button-full" onClick={() => setGuestMode(true)}>Use programme preview</button>
-                {!hasClientAuthConfig() && <p className="form-footnote">Account registration is currently in preview. Programme access remains available.</p>}
-              </div>
+              {candidateAccessPanel()}
             </div>
           </section>
         </main>
@@ -628,7 +704,7 @@ export default function App() {
     <div className="portal-shell">
       <div className="utility-bar">
         <div className="page-width utility-inner">
-          <span>Candidate Portal · 2026 Programme</span>
+          <span>{examType} Candidate Portal · 2026 Programme</span>
           <span className="utility-separator">{session ? `${planLabel(profile?.plan)} plan` : "Programme preview"}</span>
         </div>
       </div>
@@ -657,18 +733,16 @@ export default function App() {
         <main className="page-width portal-layout">
           <aside className="practice-desk">
             <div className="panel-heading">
-              <p className="folio">Practice desk</p>
+              <p className="folio">{examType} practice desk</p>
               <h1>Prepare an assignment</h1>
-              <p>Choose a programme, curriculum point and assessment format.</p>
+              <p>Choose a {examType === ExamType.CFA ? "level" : "part"}, curriculum point and assessment format.</p>
             </div>
 
-            <fieldset className="segmented-fieldset">
-              <legend>Programme</legend>
-              <div>
-                <button className={examType === ExamType.CFA ? "active" : ""} onClick={() => changeExam(ExamType.CFA)}>CFA</button>
-                <button className={examType === ExamType.FRM ? "active" : ""} onClick={() => changeExam(ExamType.FRM)}>FRM</button>
-              </div>
-            </fieldset>
+            <section className="programme-lock" aria-label="Current programme">
+              <span>Current programme</span>
+              <strong>{examType} Programme</strong>
+              <small>{examType === ExamType.CFA ? "Investment analysis and portfolio management" : "Financial risk measurement and management"}</small>
+            </section>
 
             <fieldset className="level-fieldset">
               <legend>Programme stage</legend>
