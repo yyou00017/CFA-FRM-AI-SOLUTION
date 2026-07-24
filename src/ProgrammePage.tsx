@@ -57,9 +57,11 @@ const PROGRAMMES = {
         note: "Portfolio judgment · Constructed response",
       },
     ],
-    curriculumTitle: "An investment curriculum organised for deliberate practice.",
+    curriculumTitle: "All ten Level I topic areas, organised for deliberate practice.",
     curriculumIntro:
-      "Assignments are separated by level and subject so candidates can strengthen individual decision processes before progressing to mixed work.",
+      "The Level I directory follows the complete official topic structure. Assignments remain separated by level and subject so candidates can strengthen individual decision processes before progressing to mixed work.",
+    directoryLabel: "CFA Level I topic directory",
+    directoryNote: "10 topic areas",
     advantagesTitle: "Practice designed to reveal how an investment conclusion was reached.",
     advantagesIntro:
       "Kensworth combines candidate-directed practice with a structured academic record. The emphasis stays on the reasoning process behind the answer.",
@@ -96,12 +98,16 @@ const PROGRAMMES = {
       },
     ],
     subjects: [
-      ["Ethics & Professional Standards", "Decision frameworks, professional conduct and application of standards."],
+      ["Ethical and Professional Standards", "Ethical decision-making, professional conduct, the Code and Standards and performance presentation."],
       ["Quantitative Methods", "Rates of return, probability, statistics and analytical techniques."],
-      ["Financial Statement Analysis", "Reporting quality, accounting choices and analytical interpretation."],
-      ["Equity & Fixed Income", "Security analysis, valuation, yield, duration and credit fundamentals."],
-      ["Derivatives & Alternatives", "Pricing relationships, risk transfer and portfolio applications."],
-      ["Portfolio Management", "Asset allocation, portfolio construction and wealth-planning judgment."],
+      ["Economics", "Supply and demand, market structures, macroeconomics, business cycles and international trade."],
+      ["Financial Statement Analysis", "Financial reporting, primary statements, accounting choices and analytical interpretation."],
+      ["Corporate Issuers", "Corporate governance, capital investment, financing decisions, leverage and working-capital management."],
+      ["Equity Investments", "Markets, indexes, industry and company analysis and introductory equity valuation."],
+      ["Fixed Income", "Bond features, yield measures, valuation, securitisation, interest-rate risk and credit fundamentals."],
+      ["Derivatives", "Forwards, futures, swaps, options, arbitrage and introductory valuation relationships."],
+      ["Alternative Investments", "Private capital, real estate, hedge funds, commodities, infrastructure and diversification."],
+      ["Portfolio Management", "Risk and return, portfolio planning, construction and the needs of different investors."],
     ],
     methodTitle: "From a calculation to an investment conclusion.",
     methodSteps: [
@@ -168,6 +174,8 @@ const PROGRAMMES = {
     curriculumTitle: "A risk curriculum organised by how institutions make decisions.",
     curriculumIntro:
       "Practice moves from model mechanics to interpretation, limitations, controls and management action—without mixing the programme with investment-analyst preparation.",
+    directoryLabel: "FRM curriculum domain directory",
+    directoryNote: "Parts I and II",
     advantagesTitle: "Practice designed to connect a risk measure with a management response.",
     advantagesIntro:
       "Kensworth gives candidates control over the exposure, method and assessment lens being practised, then records where the reasoning process breaks down.",
@@ -344,6 +352,10 @@ export function ProgrammePage({ programme, onPreview, accessPanel }: ProgrammePa
               <button className="text-link" onClick={onPreview}>Review a model assignment <ArrowRight aria-hidden="true" /></button>
             </div>
             <div className="subject-directory">
+              <div className="subject-directory-header">
+                <span>{content.directoryLabel}</span>
+                <small>{content.directoryNote}</small>
+              </div>
               {content.subjects.map(([title, text], index) => (
                 <article key={title}>
                   <span>{String(index + 1).padStart(2, "0")}</span>

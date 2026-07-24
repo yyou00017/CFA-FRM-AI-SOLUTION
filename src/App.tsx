@@ -85,14 +85,23 @@ function programmeFromPath(pathname: string) {
 
 function topicBucket(text = "", programme = ExamType.CFA) {
   const lower = text.toLowerCase();
-  if (lower.includes("ethic") || lower.includes("professional standard")) return "Ethics & Professional Standards";
+  if (lower.includes("ethic") || lower.includes("professional standard")) return "Ethical and Professional Standards";
   if (lower.includes("quantitative") || lower.includes("regression") || lower.includes("probability") || lower.includes("time series")) {
     return programme === ExamType.CFA ? "Quantitative Methods" : "Quantitative Analysis";
   }
   if (lower.includes("operational") || lower.includes("resilience")) return "Operational Risk";
   if (lower.includes("liquidity") || lower.includes("treasury") || lower.includes("funding risk")) return "Liquidity and Treasury Risk";
   if (lower.includes("capm") || lower.includes("beta") || lower.includes("sml")) return "Portfolio Management";
-  if (lower.includes("dcf") || lower.includes("fcff") || lower.includes("fcfe") || lower.includes("cash flow")) return "Equity Valuation";
+  if (programme === ExamType.CFA && (lower.includes("economics") || lower.includes("macroeconomic") || lower.includes("microeconomic") || lower.includes("business cycle") || lower.includes("exchange rate") || lower.includes("supply and demand"))) {
+    return "Economics";
+  }
+  if (programme === ExamType.CFA && (lower.includes("corporate issuer") || lower.includes("corporate governance") || lower.includes("capital budgeting") || lower.includes("working capital") || lower.includes("cost of capital") || lower.includes("wacc"))) {
+    return "Corporate Issuers";
+  }
+  if (programme === ExamType.CFA && (lower.includes("alternative investment") || lower.includes("private equity") || lower.includes("private capital") || lower.includes("hedge fund") || lower.includes("real estate") || lower.includes("commodity") || lower.includes("infrastructure"))) {
+    return "Alternative Investments";
+  }
+  if (lower.includes("dcf") || lower.includes("fcff") || lower.includes("fcfe") || lower.includes("cash flow") || lower.includes("equity valuation")) return "Equity Investments";
   if (lower.includes("derivative") || lower.includes("option") || lower.includes("swap") || lower.includes("future")) {
     return programme === ExamType.FRM ? "Financial Markets and Products" : "Derivatives";
   }
@@ -474,7 +483,7 @@ export default function App() {
   const subjectRecord = useMemo(() => {
     const subjectMap = new Map<string, { name: string; attempted: number; correct: number }>();
     const programmeSubjects = examType === ExamType.CFA
-      ? ["Ethics & Professional Standards", "Quantitative Methods", "Financial Statement Analysis", "Equity Valuation", "Fixed Income", "Derivatives", "Portfolio Management"]
+      ? ["Ethical and Professional Standards", "Quantitative Methods", "Economics", "Financial Statement Analysis", "Corporate Issuers", "Equity Investments", "Fixed Income", "Derivatives", "Alternative Investments", "Portfolio Management"]
       : ["Foundations of Risk Management", "Quantitative Analysis", "Financial Markets and Products", "Valuation and Risk Models", "Market Risk", "Credit Risk", "Operational Risk", "Liquidity and Treasury Risk"];
     programmeSubjects.forEach((name) => {
       subjectMap.set(name, { name, attempted: 0, correct: 0 });

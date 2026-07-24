@@ -1147,6 +1147,31 @@ a {
   border-top: 5px solid var(--programme-accent);
 }
 
+.subject-directory-header {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 28px;
+  border: 1px solid var(--rule);
+  border-top: 0;
+  color: var(--navy);
+}
+
+.subject-directory-header > span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.subject-directory-header > small {
+  color: var(--programme-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12px;
+}
+
 .subject-directory article {
   min-height: 112px;
   display: grid;
