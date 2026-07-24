@@ -938,6 +938,85 @@ a {
   line-height: 1.65;
 }
 
+.programme-orientation {
+  padding: 104px 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.programme-orientation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  gap: 110px;
+  align-items: start;
+}
+
+.programme-orientation-copy {
+  max-width: 760px;
+}
+
+.programme-orientation-copy .eyebrow,
+.programme-journey-title .eyebrow {
+  color: var(--programme-accent);
+}
+
+.programme-orientation-copy h2,
+.programme-journey-title h2 {
+  margin: 18px 0 0;
+  color: var(--navy-deep);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(38px, 4.2vw, 58px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.programme-orientation-copy > p:not(.eyebrow) {
+  margin: 27px 0 0;
+  color: #4f5b62;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.candidate-profile-list {
+  border-top: 5px solid var(--programme-accent);
+}
+
+.candidate-profile-list > .folio {
+  padding: 18px 0 14px;
+  color: var(--programme-accent);
+  border-bottom: 1px solid var(--rule-dark);
+}
+
+.candidate-profile-list article {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 22px;
+  padding: 27px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.candidate-profile-list article > span {
+  color: var(--gold);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+}
+
+.candidate-profile-list h3 {
+  margin: 0;
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  font-weight: 400;
+}
+
+.candidate-profile-list article p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .programme-stages {
   padding: 100px 0;
   background: var(--warm-white);
@@ -1105,6 +1184,84 @@ a {
   color: var(--programme-accent);
 }
 
+.programme-advantages {
+  padding: 104px 0;
+  background: var(--programme-band);
+  color: white;
+  border-top: 7px solid var(--programme-accent);
+}
+
+.programme-advantages-heading .eyebrow {
+  color: #d1bc87;
+}
+
+.programme-advantages-heading h2 {
+  color: white;
+}
+
+.programme-advantages-heading > p {
+  color: #bdc9c8;
+}
+
+.advantage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 68px;
+  border-top: 1px solid rgba(255,255,255,.22);
+  border-bottom: 1px solid rgba(255,255,255,.22);
+}
+
+.advantage-grid article {
+  min-height: 310px;
+  padding: 31px;
+  border-right: 1px solid rgba(255,255,255,.18);
+  border-bottom: 1px solid rgba(255,255,255,.18);
+}
+
+.advantage-grid article:nth-child(3n) {
+  border-right: 0;
+}
+
+.advantage-grid article:nth-last-child(-n+3) {
+  border-bottom: 0;
+}
+
+.advantage-index {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.advantage-index > span {
+  color: #d1bc87;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+}
+
+.advantage-index > small {
+  color: #b9c7c6;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.advantage-grid h3 {
+  margin: 38px 0 15px;
+  color: white;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.advantage-grid p {
+  margin: 0;
+  color: #bdc9c8;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
 .programme-method {
   padding: 96px 0;
   background: var(--paper);
@@ -1149,6 +1306,67 @@ a {
 
 .programme-method-grid p {
   margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.programme-journey {
+  padding: 104px 0;
+  background: var(--warm-white);
+  border-bottom: 1px solid var(--rule);
+}
+
+.programme-journey-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.76fr) minmax(0, 1.24fr);
+  gap: 100px;
+  align-items: start;
+}
+
+.programme-journey-title {
+  position: sticky;
+  top: 28px;
+}
+
+.programme-journey-title > p:not(.eyebrow) {
+  margin: 27px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.programme-journey-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 5px solid var(--programme-accent);
+}
+
+.programme-journey-list li {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 24px;
+  padding: 29px 0;
+  border-bottom: 1px solid var(--rule-dark);
+}
+
+.programme-journey-list li > span {
+  color: var(--programme-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+}
+
+.programme-journey-list h3 {
+  margin: 0;
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.programme-journey-list p {
+  margin: 8px 0 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.7;
@@ -2326,7 +2544,9 @@ a {
   .record-grid,
   .programme-hero-grid,
   .programme-section-heading,
-  .programme-curriculum-grid {
+  .programme-curriculum-grid,
+  .programme-orientation-grid,
+  .programme-journey-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2352,8 +2572,34 @@ a {
     gap: 56px;
   }
 
-  .programme-curriculum-intro {
+  .programme-orientation-grid,
+  .programme-journey-grid {
+    gap: 58px;
+  }
+
+  .programme-curriculum-intro,
+  .programme-journey-title {
     position: static;
+  }
+
+  .advantage-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .advantage-grid article:nth-child(3n) {
+    border-right: 1px solid rgba(255,255,255,.18);
+  }
+
+  .advantage-grid article:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .advantage-grid article:nth-last-child(-n+3) {
+    border-bottom: 1px solid rgba(255,255,255,.18);
+  }
+
+  .advantage-grid article:nth-last-child(-n+2) {
+    border-bottom: 0;
   }
 
   .programme-method-grid {
@@ -2481,8 +2727,11 @@ a {
 
   .method-section,
   .access-section,
+  .programme-orientation,
   .programme-stages,
   .programme-curriculum,
+  .programme-advantages,
+  .programme-journey,
   .programme-method {
     padding-block: 70px;
   }
@@ -2495,9 +2744,34 @@ a {
   }
 
   .programme-section-heading h2,
+  .programme-orientation-copy h2,
   .programme-curriculum-intro h2,
-  .programme-method-title h2 {
+  .programme-method-title h2,
+  .programme-journey-title h2 {
     font-size: 36px;
+  }
+
+  .programme-orientation-copy > p:not(.eyebrow) {
+    font-size: 14px;
+  }
+
+  .advantage-grid {
+    grid-template-columns: 1fr;
+    margin-top: 48px;
+  }
+
+  .advantage-grid article,
+  .advantage-grid article:nth-child(2n),
+  .advantage-grid article:nth-child(3n),
+  .advantage-grid article:nth-last-child(-n+2),
+  .advantage-grid article:nth-last-child(-n+3) {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,.18);
+  }
+
+  .advantage-grid article:last-child {
+    border-bottom: 0;
   }
 
   .stage-grid article,

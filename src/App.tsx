@@ -199,9 +199,9 @@ export default function App() {
         ? "FRM Preparation | Kensworth Institute of Finance"
         : "Kensworth Institute of Finance | CFA & FRM Preparation";
     const description = publicProgramme === ExamType.CFA
-      ? "A dedicated CFA preparation programme for Levels I, II and III."
+      ? "A dedicated CFA programme for Levels I, II and III with focused assignments, worked rationales and directed review."
       : publicProgramme === ExamType.FRM
-        ? "A dedicated FRM preparation programme for Parts I and II."
+        ? "A dedicated FRM programme for Parts I and II with focused assignments, worked rationales and directed review."
         : "Independent CFA and FRM examination preparation built around disciplined practice and review.";
     document.title = title;
     document.querySelector('meta[name="description"]')?.setAttribute("content", description);

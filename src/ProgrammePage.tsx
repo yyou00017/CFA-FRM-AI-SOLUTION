@@ -18,6 +18,25 @@ const PROGRAMMES = {
       "A dedicated preparation route for candidates building from core investment concepts to advanced analysis, portfolio construction and professional judgment.",
     descriptor: "Investment analysis and portfolio management",
     progression: "Learn · Analyse · Integrate",
+    overviewTitle: "A preparation environment for using the curriculum—not merely covering it.",
+    overviewCopy: [
+      "The CFA curriculum is broad, but examination performance depends on more than recalling definitions and formulas. Candidates must identify the relevant principle, interpret the information provided and reach a defensible investment conclusion under time pressure.",
+      "Kensworth turns individual curriculum points into focused assignments. Each submission is followed by a worked rationale, a curriculum note and an examination-convention review, so practice develops both technical accuracy and analytical judgment.",
+    ],
+    candidateProfiles: [
+      {
+        title: "First-time candidates",
+        text: "Build disciplined application alongside the core reading programme, one subject and level at a time.",
+      },
+      {
+        title: "Returning candidates",
+        text: "Isolate the concepts and question methods that remain insecure instead of repeating an entire question bank.",
+      },
+      {
+        title: "Working professionals",
+        text: "Prepare a short, purposeful assignment around the exact curriculum point available in the current study session.",
+      },
+    ],
     stages: [
       {
         index: "Level I",
@@ -41,6 +60,41 @@ const PROGRAMMES = {
     curriculumTitle: "An investment curriculum organised for deliberate practice.",
     curriculumIntro:
       "Assignments are separated by level and subject so candidates can strengthen individual decision processes before progressing to mixed work.",
+    advantagesTitle: "Practice designed to reveal how an investment conclusion was reached.",
+    advantagesIntro:
+      "Kensworth combines candidate-directed practice with a structured academic record. The emphasis stays on the reasoning process behind the answer.",
+    advantages: [
+      {
+        label: "Curriculum-point control",
+        title: "Start from the exact concept you need to strengthen.",
+        text: "Select a level, enter a precise curriculum point and prepare an assignment around that scope rather than searching through a general bank.",
+      },
+      {
+        label: "Modified-data practice",
+        title: "Test the same principle under different information.",
+        text: "Reworked figures, assumptions and decision contexts help distinguish genuine understanding from recognition of a familiar question.",
+      },
+      {
+        label: "Six assessment lenses",
+        title: "Examine knowledge from more than one direction.",
+        text: "Concept mastery, calculations, sensitivity, cases, professional application and reverse problems expose different forms of weakness.",
+      },
+      {
+        label: "Three-part review",
+        title: "See the calculation, curriculum meaning and exam convention.",
+        text: "Every reviewed question separates the worked rationale from the underlying knowledge and the convention or trap that shaped the item.",
+      },
+      {
+        label: "Dual-axis learning record",
+        title: "Measure subjects and methods separately.",
+        text: "A candidate may know a subject but struggle with a particular form of assessment. Kensworth records both dimensions instead of reducing progress to one percentage.",
+      },
+      {
+        label: "Recommended next work",
+        title: "Turn each result into a practical next assignment.",
+        text: "Completed work informs a focused recommendation so the next session begins with a clear subject, assessment focus and assignment length.",
+      },
+    ],
     subjects: [
       ["Ethics & Professional Standards", "Decision frameworks, professional conduct and application of standards."],
       ["Quantitative Methods", "Rates of return, probability, statistics and analytical techniques."],
@@ -55,6 +109,12 @@ const PROGRAMMES = {
       ["Analyse", "Work through valuation, evidence and decision alternatives."],
       ["Explain", "State why the chosen response is defensible and the alternatives are not."],
       ["Integrate", "Connect the result to portfolio objectives and professional standards."],
+    ],
+    journey: [
+      ["Define the scope", "Choose the CFA level and state the specific curriculum point to be assessed."],
+      ["Prepare an assignment", "Select the question format, length and primary assessment focus for the study session."],
+      ["Review the reasoning", "Submit responses and examine the worked rationale, curriculum note and examination convention."],
+      ["Build the record", "Save the assignment, update subject standing and begin the recommended next work."],
     ],
     accessTitle: "Open your CFA candidate workspace.",
     accessCopy:
@@ -72,6 +132,25 @@ const PROGRAMMES = {
       "A dedicated preparation route for candidates who need to quantify financial risk, challenge model assumptions and apply risk tools in professional decisions.",
     descriptor: "Financial risk measurement and management",
     progression: "Measure · Challenge · Manage",
+    overviewTitle: "A preparation environment for moving from model mechanics to risk decisions.",
+    overviewCopy: [
+      "FRM candidates must do more than reproduce a formula. Strong performance requires recognising the exposure, choosing an appropriate method, understanding its assumptions and interpreting what the result means for limits, controls or management action.",
+      "Kensworth organises practice around that professional sequence. Focused assignments test quantitative execution and model judgment separately, while the review explains both the technical method and the risk-management implication.",
+    ],
+    candidateProfiles: [
+      {
+        title: "Part I candidates",
+        text: "Strengthen the quantitative toolkit, product knowledge and valuation methods that support later risk decisions.",
+      },
+      {
+        title: "Part II candidates",
+        text: "Practise applying models across market, credit, operational, liquidity, treasury and investment-risk settings.",
+      },
+      {
+        title: "Candidates retaking a part",
+        text: "Separate model-calculation gaps from interpretation and management-action gaps before the next examination attempt.",
+      },
+    ],
     stages: [
       {
         index: "Part I",
@@ -89,6 +168,41 @@ const PROGRAMMES = {
     curriculumTitle: "A risk curriculum organised by how institutions make decisions.",
     curriculumIntro:
       "Practice moves from model mechanics to interpretation, limitations, controls and management action—without mixing the programme with investment-analyst preparation.",
+    advantagesTitle: "Practice designed to connect a risk measure with a management response.",
+    advantagesIntro:
+      "Kensworth gives candidates control over the exposure, method and assessment lens being practised, then records where the reasoning process breaks down.",
+    advantages: [
+      {
+        label: "Risk-topic control",
+        title: "Work on the exact model, exposure or risk domain.",
+        text: "Choose the FRM part and define a precise scope—from VaR scaling to CDS exposure—without searching through unrelated investment-analysis material.",
+      },
+      {
+        label: "Assumption changes",
+        title: "Challenge the model when the conditions change.",
+        text: "Modified confidence levels, horizons, correlations, recoveries and market inputs test whether candidates understand when a familiar method still applies.",
+      },
+      {
+        label: "Six assessment lenses",
+        title: "Separate mechanics from professional judgment.",
+        text: "Concepts, calculations, sensitivity, cases, risk practice and reverse problems reveal whether the weakness lies in method selection, execution or interpretation.",
+      },
+      {
+        label: "Three-part review",
+        title: "Connect the calculation to its limitation and implication.",
+        text: "The worked rationale explains the method, the curriculum note clarifies the underlying risk principle and the exam convention identifies the likely trap.",
+      },
+      {
+        label: "Dual-axis learning record",
+        title: "Track risk domains and assessment methods.",
+        text: "Market risk may be secure while sensitivity analysis remains weak. The record keeps those findings distinct and usable.",
+      },
+      {
+        label: "Recommended next work",
+        title: "Convert every result into focused remediation.",
+        text: "The next assignment is directed toward the weakest relevant risk domain or assessment method rather than a generic daily target.",
+      },
+    ],
     subjects: [
       ["Foundations of Risk Management", "Risk governance, frameworks and the role of the risk function."],
       ["Quantitative Analysis", "Probability, estimation, regression and time-series reasoning."],
@@ -103,6 +217,12 @@ const PROGRAMMES = {
       ["Measure", "Select and apply the appropriate quantitative or valuation method."],
       ["Challenge", "Test assumptions, limitations, sensitivity and model risk."],
       ["Act", "Translate the result into limits, controls, hedging or management action."],
+    ],
+    journey: [
+      ["Define the scope", "Choose the FRM part and state the model, exposure or risk domain to be assessed."],
+      ["Prepare an assignment", "Select the question format, length and primary assessment focus for the study session."],
+      ["Review the reasoning", "Submit responses and examine the method, risk principle and examination convention."],
+      ["Build the record", "Save the assignment, update risk-domain standing and begin the recommended next work."],
     ],
     accessTitle: "Open your FRM candidate workspace.",
     accessCopy:
@@ -133,6 +253,7 @@ export function ProgrammePage({ programme, onPreview, accessPanel }: ProgrammePa
         <nav className="public-nav" aria-label={`${content.code} programme navigation`}>
           <a href="#overview">Programme</a>
           <a href="#curriculum">Curriculum</a>
+          <a href="#advantages">Advantages</a>
           <a href="#candidate-access">Candidate Access</a>
           <a className="all-programmes-link" href="/"><ArrowLeft aria-hidden="true" /> All programmes</a>
         </nav>
@@ -165,6 +286,28 @@ export function ProgrammePage({ programme, onPreview, accessPanel }: ProgrammePa
               </dl>
               <p>Independent preparation built around focused assignments, worked rationale and disciplined review.</p>
             </aside>
+          </div>
+        </section>
+
+        <section className="programme-orientation">
+          <div className="page-width programme-orientation-grid">
+            <div className="programme-orientation-copy">
+              <p className="eyebrow">Programme purpose</p>
+              <h2>{content.overviewTitle}</h2>
+              {content.overviewCopy.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+            </div>
+            <div className="candidate-profile-list">
+              <p className="folio">Who this programme is for</p>
+              {content.candidateProfiles.map((profile, index) => (
+                <article key={profile.title}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3>{profile.title}</h3>
+                    <p>{profile.text}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -212,6 +355,30 @@ export function ProgrammePage({ programme, onPreview, accessPanel }: ProgrammePa
           </div>
         </section>
 
+        <section className="programme-advantages" id="advantages">
+          <div className="page-width">
+            <div className="programme-section-heading programme-advantages-heading">
+              <div>
+                <p className="eyebrow">Why Kensworth</p>
+                <h2>{content.advantagesTitle}</h2>
+              </div>
+              <p>{content.advantagesIntro}</p>
+            </div>
+            <div className="advantage-grid">
+              {content.advantages.map((advantage, index) => (
+                <article key={advantage.label}>
+                  <div className="advantage-index">
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <small>{advantage.label}</small>
+                  </div>
+                  <h3>{advantage.title}</h3>
+                  <p>{advantage.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="programme-method">
           <div className="page-width">
             <div className="programme-method-title">
@@ -227,6 +394,29 @@ export function ProgrammePage({ programme, onPreview, accessPanel }: ProgrammePa
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="programme-journey">
+          <div className="page-width programme-journey-grid">
+            <div className="programme-journey-title">
+              <p className="eyebrow">Candidate journey</p>
+              <h2>One study session should produce evidence and a next step.</h2>
+              <p>
+                The programme turns a chosen curriculum point into an assessed assignment, a reviewed decision process and a durable candidate record.
+              </p>
+            </div>
+            <ol className="programme-journey-list">
+              {content.journey.map(([title, text], index) => (
+                <li key={title}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
